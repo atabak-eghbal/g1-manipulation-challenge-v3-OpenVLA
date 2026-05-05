@@ -681,3 +681,33 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
     - Cylinder consistently lands on the blue target table (`on_target_table=True`).
     - Task completes through `DONE` state in ~50 simulated seconds.
 - **Status:** **Pass.**
+
+---
+
+## [2026-05-05] Step 12: VLA Research Branch Scaffold
+
+- **Goal / Hypothesis:** Create a safe VLA/OpenVLA research branch without changing the working FSM baseline. The hypothesis is that OpenVLA-style models may eventually augment the pipeline, but only after we prove action-space compatibility with the G1 walker/reacher/grip stack.
+
+- **Files Changed:**
+  - `docs/VLA_RESEARCH_PLAN.md` — research plan and staged roadmap
+  - `docs/VLA_DECISION_LOG.md` — decision record for VLA branch
+  - `vla_bridge/__init__.py` — empty package scaffold for future adapter/demo code
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands Run:** None required.
+
+- **Expected Result:** Repository now has a documented VLA research path while the implemented FSM behavior remains unchanged.
+
+- **Reasoning:** OpenVLA-style models are attractive for language-conditioned manipulation, but direct live control is premature because the G1 stack uses a different action interface: walker commands, pelvis-frame reach targets, and binary grip state. The first real technical gate will be a 7D action replay test, not model inference.
+
+- **Architecture Decision:** Keep the FSM as the teacher and fallback. Build the VLA branch progressively:
+  1. documentation scaffold,
+  2. action adapter,
+  3. FSM demonstration recorder,
+  4. 7D action replay,
+  5. OpenVLA shadow mode,
+  6. possible cloud inference/fine-tuning.
+
+- **Pass / Fail:** Pass if files are created and no runtime files are changed.
+
+- **Next Risk:** The 7D OpenVLA-style action space may not represent the full humanoid task, especially locomotion and target-table approach. If so, keep locomotion classical and use VLA only for manipulation refinement.
