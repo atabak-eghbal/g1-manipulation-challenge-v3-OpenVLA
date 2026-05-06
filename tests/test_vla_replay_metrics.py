@@ -11,6 +11,7 @@ from vla_bridge.replay_metrics import (
     compute_replay_metrics,
     grip_mismatch_count,
     palm_error_metrics,
+    walk_command_magnitudes,
 )
 
 
@@ -19,6 +20,8 @@ def make_step(
     palm=(0.0, 0.0, 0.0),
     grip=False,
     action=(0.0, 0.0, 0.0),
+    walk_cmd=(0.0, 0.0, 0.0),
+    reach_active=True,
 ) -> VLADemoStep:
     return VLADemoStep(
         step_index=i,
@@ -29,7 +32,9 @@ def make_step(
         palm_world=tuple(float(x) for x in palm),
         pelvis_pos=(0.0, 0.0, 0.76),
         pelvis_quat=(1.0, 0.0, 0.0, 0.0),
+        walk_cmd=tuple(float(x) for x in walk_cmd),
         reach_target_pelvis=(0.3, -0.2, 0.2),
+        reach_active=bool(reach_active),
         grip_closed=bool(grip),
         action_7d=(
             float(action[0]),
@@ -120,6 +125,34 @@ class TestVLAReplayMetrics(unittest.TestCase):
         steps = [make_step(0)]
         with self.assertRaises(ValueError):
             compute_replay_metrics(steps, np.zeros((1, 3)), [])
+
+
+class TestWalkCommandMetrics(unittest.TestCase):
+    def test_walk_command_magnitudes_empty(self):
+        mags = walk_command_magnitudes([])
+        self.assertEqual(mags.shape, (0,))
+        self.assertEqual(mags.dtype, np.float64)
+
+    def test_walk_command_magnitudes_known_values(self):
+        steps = [
+            make_step(0, walk_cmd=(3.0, 4.0, 0.0)),
+            make_step(1, walk_cmd=(0.0, 0.0, 12.0)),
+        ]
+        mags = walk_command_magnitudes(steps)
+        np.testing.assert_allclose(mags, [5.0, 12.0])
+
+    def test_compute_replay_metrics_includes_walk_fields(self):
+        steps = [
+            make_step(0, walk_cmd=(0.0, 0.0, 0.0), reach_active=False),
+            make_step(1, walk_cmd=(3.0, 4.0, 0.0), reach_active=True),
+        ]
+        replay = np.array([[0, 0, 0], [0, 0, 0]], dtype=float)
+        metrics = compute_replay_metrics(steps, replay, [False, False])
+
+        self.assertEqual(metrics.walk_nonzero_steps, 1)
+        self.assertEqual(metrics.reach_active_steps, 1)
+        self.assertAlmostEqual(metrics.max_walk_command_magnitude, 5.0)
+        self.assertAlmostEqual(metrics.mean_walk_command_magnitude, 2.5)
 
 
 if __name__ == "__main__":

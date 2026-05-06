@@ -94,6 +94,17 @@ def plot_phase_index(steps, output_dir: Path) -> None:
     _save(fig, output_dir / "phase_index.png")
 
 
+def plot_walk_command_magnitude(steps, output_dir: Path) -> None:
+    walk_cmds = np.array([s.walk_cmd for s in steps], dtype=np.float64)
+    mags = np.linalg.norm(walk_cmds, axis=1)
+    fig, ax = plt.subplots()
+    ax.plot(mags)
+    ax.set_xlabel("Step")
+    ax.set_ylabel("Walk command magnitude")
+    ax.set_title("Walk command magnitude per step")
+    _save(fig, output_dir / "walk_command_magnitude.png")
+
+
 def plot_palm_error(trace_path: Path, output_dir: Path) -> None:
     trace = np.load(str(trace_path))
     teacher = trace["teacher_palm_world"]
@@ -123,6 +134,7 @@ def main() -> int:
     plot_action_magnitude(steps, args.output_dir)
     plot_grip_state(steps, args.output_dir)
     plot_phase_index(steps, args.output_dir)
+    plot_walk_command_magnitude(steps, args.output_dir)
 
     if args.replay_trace is not None:
         plot_palm_error(args.replay_trace, args.output_dir)

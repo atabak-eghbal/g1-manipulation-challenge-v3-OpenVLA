@@ -102,6 +102,8 @@ def summarize_demo(recorder: VLADemoRecorder, done_reached: bool) -> dict:
         "max_action_xyz_m": float(mag.max()) if len(mag) else 0.0,
         "mean_action_xyz_m": float(mag.mean()) if len(mag) else 0.0,
         "grip_closed_steps": int(sum(1 for s in steps if s.grip_closed)),
+        "walk_nonzero_steps": int(sum(np.linalg.norm(s.walk_cmd) > 1e-9 for s in steps)),
+        "reach_active_steps": int(sum(s.reach_active for s in steps)),
     }
 
 
@@ -249,8 +251,10 @@ def main() -> int:
             palm_world=palm_world,
             pelvis_pos=pelvis_pos,
             pelvis_quat=pelvis_quat,
-            reach_target_pelvis=reach_target_pelvis,
-            grip_closed=ctrl.grip_closed,
+            walk_cmd=out.walk_cmd,
+            reach_target_pelvis=tuple(float(v) for v in out.reach_target),
+            reach_active=bool(out.reach_active),
+            grip_closed=bool(out.grip_closed),
         )
 
         # --- DONE detection ---
@@ -291,6 +295,8 @@ def main() -> int:
         print(f"  unique_phases : {summary['unique_phases']}")
         print(f"  max_action_m  : {summary['max_action_xyz_m']:.6f}")
         print(f"  grip_closed   : {summary['grip_closed_steps']}")
+        print(f"  walk_nonzero  : {summary['walk_nonzero_steps']}")
+        print(f"  reach_active  : {summary['reach_active_steps']}")
     print(f"  done_reached  : {done_reached}")
 
     if not recorder.steps:

@@ -6,6 +6,10 @@ Step 15:
 - replay action_7d through G1VLAActionAdapter
 - do not use FSM target lookups
 - do not load OpenVLA
+
+Step 16 additions:
+- teacher-command mode: replay recorded teacher walk/reach/grip directly
+- hybrid-7d mode: teacher walk_cmd + adapter manipulation
 """
 from __future__ import annotations
 
@@ -24,6 +28,7 @@ from common.controller import WalkerReacherController
 from common.grasp import KinematicAttachment
 from common.onnx_policy import ONNXPolicy
 from common.scene import reset_robot
+from policies.base import PolicyOutput
 from vla_bridge.action_adapter import G1VLAActionAdapter
 from vla_bridge.demo_schema import read_jsonl
 from vla_bridge.replay_metrics import compute_replay_metrics
@@ -94,9 +99,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["arm-only"],
+        choices=["arm-only", "teacher-command", "hybrid-7d"],
         default="arm-only",
-        help="Replay mode (currently only arm-only is supported)",
+        help=(
+            "Replay mode: arm-only (adapter, walk=(0,0,0)), "
+            "teacher-command (recorded teacher fields), "
+            "hybrid-7d (teacher walk_cmd + adapter manipulation)"
+        ),
     )
     parser.add_argument(
         "--init-current-palm",
@@ -187,13 +196,29 @@ def main() -> int:
         pelvis_quat = data.qpos[3:7].copy()
         current_palm = data.site_xpos[ctrl.right_palm_site_id].copy()
 
-        out = adapter.step(
-            np.asarray(step.action_7d, dtype=np.float64),
-            pelvis_pos=pelvis_pos,
-            pelvis_quat=pelvis_quat,
-            current_palm_world=current_palm,
-            walk_cmd=(0.0, 0.0, 0.0),
-        )
+        if args.mode == "arm-only":
+            out = adapter.step(
+                np.asarray(step.action_7d, dtype=np.float64),
+                pelvis_pos=pelvis_pos,
+                pelvis_quat=pelvis_quat,
+                current_palm_world=current_palm,
+                walk_cmd=(0.0, 0.0, 0.0),
+            )
+        elif args.mode == "teacher-command":
+            out = PolicyOutput(
+                walk_cmd=tuple(float(x) for x in step.walk_cmd),
+                reach_target=tuple(float(x) for x in step.reach_target_pelvis),
+                reach_active=bool(step.reach_active),
+                grip_closed=bool(step.grip_closed),
+            )
+        else:  # hybrid-7d
+            out = adapter.step(
+                np.asarray(step.action_7d, dtype=np.float64),
+                pelvis_pos=pelvis_pos,
+                pelvis_quat=pelvis_quat,
+                current_palm_world=current_palm,
+                walk_cmd=step.walk_cmd,
+            )
 
         policy_output_to_controller(ctrl, out)
         target_pos = ctrl.step()
@@ -225,6 +250,8 @@ def main() -> int:
         "mean_action_magnitude_m": metrics.mean_action_magnitude_m,
         "max_action_magnitude_m": metrics.max_action_magnitude_m,
         "grip_mismatch_count": metrics.grip_mismatch_count,
+        "walk_nonzero_steps": metrics.walk_nonzero_steps,
+        "reach_active_steps": metrics.reach_active_steps,
         "attached_steps": int(sum(replay_attached)),
         "ever_attached": bool(any(replay_attached)),
     }

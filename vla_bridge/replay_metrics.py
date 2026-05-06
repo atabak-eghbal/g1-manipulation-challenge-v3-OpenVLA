@@ -5,6 +5,10 @@ Step 15 scope:
 - no model inference
 - no MuJoCo dependency
 - pure metrics for comparing teacher and replay trajectories
+
+Step 16 additions:
+- walk_command_magnitudes helper
+- walk_nonzero_steps, reach_active_steps, mean/max walk command magnitude in ReplayMetrics
 """
 from __future__ import annotations
 
@@ -25,6 +29,10 @@ class ReplayMetrics:
     mean_action_magnitude_m: float
     max_action_magnitude_m: float
     grip_mismatch_count: int
+    mean_walk_command_magnitude: float
+    max_walk_command_magnitude: float
+    walk_nonzero_steps: int
+    reach_active_steps: int
 
 
 def action_xyz_magnitudes(steps: Sequence[VLADemoStep]) -> np.ndarray:
@@ -36,6 +44,17 @@ def action_xyz_magnitudes(steps: Sequence[VLADemoStep]) -> np.ndarray:
         return np.asarray([], dtype=np.float64)
     xyz = np.asarray([s.action_7d[:3] for s in steps], dtype=np.float64)
     return np.linalg.norm(xyz, axis=1)
+
+
+def walk_command_magnitudes(steps: Sequence[VLADemoStep]) -> np.ndarray:
+    """Return L2 norm of walk_cmd for each step.
+
+    Returns an empty float64 array if *steps* is empty.
+    """
+    if not steps:
+        return np.asarray([], dtype=np.float64)
+    walk_cmds = np.asarray([s.walk_cmd for s in steps], dtype=np.float64)
+    return np.linalg.norm(walk_cmds, axis=1)
 
 
 def palm_error_metrics(
@@ -102,6 +121,9 @@ def compute_replay_metrics(
 
     mean_err, max_err, final_err = palm_error_metrics(teacher_palm, replay_palm)
     mags = action_xyz_magnitudes(steps)
+    walk_mags = walk_command_magnitudes(steps)
+    walk_nonzero_steps = int(np.sum(walk_mags > 1e-9))
+    reach_active_steps = int(sum(bool(s.reach_active) for s in steps))
 
     return ReplayMetrics(
         num_steps=len(steps),
@@ -111,4 +133,8 @@ def compute_replay_metrics(
         mean_action_magnitude_m=float(mags.mean()) if len(mags) else float("nan"),
         max_action_magnitude_m=float(mags.max()) if len(mags) else float("nan"),
         grip_mismatch_count=grip_mismatch_count(teacher_grip, replay_grip),
+        mean_walk_command_magnitude=float(walk_mags.mean()) if len(walk_mags) else float("nan"),
+        max_walk_command_magnitude=float(walk_mags.max()) if len(walk_mags) else float("nan"),
+        walk_nonzero_steps=walk_nonzero_steps,
+        reach_active_steps=reach_active_steps,
     )
