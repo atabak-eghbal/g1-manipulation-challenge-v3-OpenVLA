@@ -250,8 +250,8 @@ def main() -> int:
         "mean_action_magnitude_m": metrics.mean_action_magnitude_m,
         "max_action_magnitude_m": metrics.max_action_magnitude_m,
         "grip_mismatch_count": metrics.grip_mismatch_count,
-        "walk_nonzero_steps": int(sum(np.linalg.norm(s.walk_cmd) > 1e-9 for s in steps)),
-        "reach_active_steps": int(sum(s.reach_active for s in steps)),
+        "walk_nonzero_steps": metrics.walk_nonzero_steps,
+        "reach_active_steps": metrics.reach_active_steps,
         "attached_steps": int(sum(replay_attached)),
         "ever_attached": bool(any(replay_attached)),
     }

@@ -95,7 +95,7 @@ def step_from_json(line: str) -> VLADemoStep:
     Backward compatible with older Step 14 JSONL files that do not contain
     ``walk_cmd`` or ``reach_active``.  Defaults:
     - ``walk_cmd`` missing → (0.0, 0.0, 0.0)
-    - ``reach_active`` missing → True if ``reach_target_pelvis`` is present, else False
+    - ``reach_active`` missing → True
     """
     data = json.loads(line)
     return VLADemoStep(
