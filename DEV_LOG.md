@@ -787,3 +787,27 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass — all 13 unit tests pass; no FSM/controller/grasp runtime files were modified.
 
 - **Next Risk:** Step 15 — replay recorded 7D actions through the G1VLAActionAdapter and verify that the robot reproduces the teacher trajectory within a tolerable error bound.
+
+---
+
+## [2026-05-05] Step 15: 7D Action Replay Harness
+
+- **Goal / Hypothesis:** Replay the VLA-style teacher actions produced in Step 14 through `G1VLAActionAdapter` and the existing G1 walker/reacher/grip stack. The hypothesis is that the recorded `[dx, dy, dz, droll, dpitch, dyaw, gripper]` action sequence can be executed as a local action interface without asking the FSM for target positions.
+
+- **Files Changed:**
+  - `vla_bridge/replay_metrics.py` — pure NumPy metrics for teacher-vs-replay comparison
+  - `scripts/replay_vla_demo.py` — replay harness for recorded VLA demonstrations
+  - `tests/test_vla_replay_metrics.py` — unit tests for replay metrics
+  - `vla_bridge/__init__.py` — exports replay metric helpers
+  - `scripts/plot_vla_demo.py` — diagnostic plotting for action magnitude, grip state, phases, and replay error
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands to Run:**
+  ```bash
+  python -m unittest tests/test_vla_replay_metrics.py
+  python -m unittest tests/test_vla_action_adapter.py
+  python -m unittest tests/test_vla_demo_schema.py
+  python scripts/replay_vla_demo.py data/vla_demos/demo_000/demo.jsonl \
+    --output-dir data/vla_replays/replay_000 \
+    --mode arm-only
+  ```
