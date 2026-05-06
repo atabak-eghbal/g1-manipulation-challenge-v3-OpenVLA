@@ -17,6 +17,13 @@ from vla_bridge.demo_schema import (
     write_jsonl,
 )
 from vla_bridge.demo_recorder import VLADemoRecorder
+from vla_bridge.replay_metrics import (
+    ReplayMetrics,
+    action_xyz_magnitudes,
+    compute_replay_metrics,
+    grip_mismatch_count,
+    palm_error_metrics,
+)
 
 __all__ = [
     # Step 13 — action adapter
@@ -34,4 +41,10 @@ __all__ = [
     "step_from_json",
     "step_to_json",
     "write_jsonl",
+    # Step 15 — replay metrics
+    "ReplayMetrics",
+    "action_xyz_magnitudes",
+    "compute_replay_metrics",
+    "grip_mismatch_count",
+    "palm_error_metrics",
 ]
