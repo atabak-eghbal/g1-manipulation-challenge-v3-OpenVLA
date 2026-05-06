@@ -711,3 +711,39 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass if files are created and no runtime files are changed.
 
 - **Next Risk:** The 7D OpenVLA-style action space may not represent the full humanoid task, especially locomotion and target-table approach. If so, keep locomotion classical and use VLA only for manipulation refinement.
+
+---
+
+## [2026-05-05] Step 13: G1 VLA Action Adapter
+
+- **Goal / Hypothesis:** Implement a pure translation layer from OpenVLA-style 7D end-effector actions to the existing G1 `PolicyOutput` contract. The hypothesis is that VLA actions can be represented as small palm deltas plus a gripper command, then converted into pelvis-frame reach targets for the existing right-reacher policy.
+
+- **Files Changed:**
+  - `vla_bridge/action_adapter.py` — pure NumPy adapter and coordinate helpers
+  - `vla_bridge/__init__.py` — exports adapter helpers
+  - `tests/test_vla_action_adapter.py` — unit tests for geometry, clipping, gripper mapping, and validation
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands Run:**
+  - `python -m unittest tests/test_vla_action_adapter.py`
+
+- **Expected Result:** All adapter unit tests pass without requiring MuJoCo, OpenVLA, Hugging Face, PyTorch, or cloud infrastructure.
+
+- **Reasoning:** Before loading OpenVLA or recording demonstrations, we need to prove that the proposed 7D action representation can be translated into the control format this repo already understands: `walk_cmd`, `reach_target`, `reach_active`, and `grip_closed`.
+
+- **Architecture Decision:** Keep the adapter pure and isolated. It does not import MuJoCo or OpenVLA. It only imports `PolicyOutput` and NumPy. Rotation channels are intentionally ignored in this milestone.
+
+- **Verification Evidence:** The unit test suite verifies:
+  1. identity world-to-pelvis transform,
+  2. zero-action output,
+  3. delta accumulation,
+  4. per-step delta clipping,
+  5. gripper threshold mapping,
+  6. reach workspace clipping,
+  7. lazy initialization from current palm position,
+  8. error handling for missing initialization,
+  9. shape validation.
+
+- **Pass / Fail:** Pass — all 9 unit tests pass and no runtime FSM files were modified.
+
+- **Next Risk:** Passing unit tests only proves the adapter math and policy contract. It does not prove the robot can execute a full 7D action sequence. Step 14 must record FSM teacher demonstrations, and Step 15 must replay those 7D actions through the adapter.
