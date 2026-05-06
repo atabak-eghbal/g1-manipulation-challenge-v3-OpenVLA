@@ -5,6 +5,9 @@ Step 14 scope:
 - save synchronized observations and derived 7D teacher actions
 - do not control the robot
 - do not load OpenVLA
+
+Step 16 additions:
+- walk_cmd and reach_active recorded in _PendingStep and VLADemoStep
 """
 from __future__ import annotations
 
@@ -30,7 +33,9 @@ class _PendingStep(NamedTuple):
     palm_world: tuple[float, float, float]
     pelvis_pos: tuple[float, float, float]
     pelvis_quat: tuple[float, float, float, float]
+    walk_cmd: tuple[float, float, float]
     reach_target_pelvis: tuple[float, float, float]
+    reach_active: bool
     grip_closed: bool
 
 
@@ -88,7 +93,9 @@ class VLADemoRecorder:
         palm_world: np.ndarray,
         pelvis_pos: np.ndarray,
         pelvis_quat: np.ndarray,
+        walk_cmd: tuple[float, float, float],
         reach_target_pelvis: tuple[float, float, float],
+        reach_active: bool,
         grip_closed: bool,
     ) -> None:
         """Record one observation frame from the FSM teacher.
@@ -104,6 +111,7 @@ class VLADemoRecorder:
         palm_tuple = as_float_tuple(palm_world, 3, "palm_world")
         pelvis_pos_tuple = as_float_tuple(pelvis_pos, 3, "pelvis_pos")
         pelvis_quat_tuple = as_float_tuple(pelvis_quat, 4, "pelvis_quat")
+        walk_tuple = as_float_tuple(walk_cmd, 3, "walk_cmd")
         reach_tuple = as_float_tuple(reach_target_pelvis, 3, "reach_target_pelvis")
 
         image_path = ""
@@ -126,7 +134,9 @@ class VLADemoRecorder:
                     palm_world=self._pending.palm_world,
                     pelvis_pos=self._pending.pelvis_pos,
                     pelvis_quat=self._pending.pelvis_quat,
+                    walk_cmd=self._pending.walk_cmd,
                     reach_target_pelvis=self._pending.reach_target_pelvis,
+                    reach_active=self._pending.reach_active,
                     grip_closed=self._pending.grip_closed,
                     action_7d=action_7d,
                 )
@@ -141,7 +151,9 @@ class VLADemoRecorder:
             palm_world=palm_tuple,
             pelvis_pos=pelvis_pos_tuple,
             pelvis_quat=pelvis_quat_tuple,
+            walk_cmd=walk_tuple,
             reach_target_pelvis=reach_tuple,
+            reach_active=bool(reach_active),
             grip_closed=bool(grip_closed),
         )
         self._num_observations += 1
@@ -172,7 +184,9 @@ class VLADemoRecorder:
                     palm_world=self._pending.palm_world,
                     pelvis_pos=self._pending.pelvis_pos,
                     pelvis_quat=self._pending.pelvis_quat,
+                    walk_cmd=self._pending.walk_cmd,
                     reach_target_pelvis=self._pending.reach_target_pelvis,
+                    reach_active=self._pending.reach_active,
                     grip_closed=self._pending.grip_closed,
                     action_7d=zero_action,
                 )

@@ -34,6 +34,11 @@ def main() -> int:
     mags = np.linalg.norm(actions, axis=1)
     phases = [s.phase for s in steps]
 
+    walk_cmds = np.asarray([s.walk_cmd for s in steps], dtype=np.float64)
+    walk_mags = np.linalg.norm(walk_cmds, axis=1)
+    walk_nonzero_steps = int(np.sum(walk_mags > 1e-9))
+    reach_active_steps = int(sum(s.reach_active for s in steps))
+
     print("--- VLA Demo Summary ---")
     print(f"metadata         : {args.metadata}")
     print(f"num_steps        : {len(steps)}")
@@ -43,6 +48,8 @@ def main() -> int:
     print(f"max_action_xyz_m : {float(mags.max()):.6f}")
     print(f"mean_action_xyz_m: {float(mags.mean()):.6f}")
     print(f"grip_closed_steps: {sum(1 for s in steps if s.grip_closed)}")
+    print(f"walk_nonzero_steps: {walk_nonzero_steps}")
+    print(f"reach_active_steps: {reach_active_steps}")
     print(f"first_image      : {steps[0].image_path}")
     print(f"last_image       : {steps[-1].image_path}")
     return 0

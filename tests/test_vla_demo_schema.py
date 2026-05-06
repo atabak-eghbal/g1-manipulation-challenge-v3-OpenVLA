@@ -34,7 +34,9 @@ def make_step(i: int = 0) -> VLADemoStep:
         palm_world=(0.1, 0.2, 0.3),
         pelvis_pos=(0.0, 0.0, 0.76),
         pelvis_quat=(1.0, 0.0, 0.0, 0.0),
+        walk_cmd=(0.0, 0.0, 0.0),
         reach_target_pelvis=(0.3, -0.2, 0.2),
+        reach_active=True,
         grip_closed=False,
         action_7d=(0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
     )
@@ -84,6 +86,32 @@ class TestJsonRoundtrip(unittest.TestCase):
         restored = step_from_json(line)
         self.assertEqual(restored, step)
 
+    def test_json_roundtrip_includes_teacher_commands(self):
+        step = make_step(3)
+        restored = step_from_json(step_to_json(step))
+        self.assertEqual(restored.walk_cmd, step.walk_cmd)
+        self.assertEqual(restored.reach_active, step.reach_active)
+
+    def test_backward_compat_missing_walk_cmd_and_reach_active(self):
+        """Older JSONL without walk_cmd/reach_active should deserialize with defaults."""
+        import json as _json
+        old_data = {
+            "step_index": 0,
+            "sim_time": 0.0,
+            "image_path": "",
+            "instruction": "test",
+            "phase": "SETTLE",
+            "palm_world": [0.1, 0.2, 0.3],
+            "pelvis_pos": [0.0, 0.0, 0.76],
+            "pelvis_quat": [1.0, 0.0, 0.0, 0.0],
+            "reach_target_pelvis": [0.3, -0.2, 0.2],
+            "grip_closed": False,
+            "action_7d": [0.01, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        }
+        restored = step_from_json(_json.dumps(old_data))
+        self.assertEqual(restored.walk_cmd, (0.0, 0.0, 0.0))
+        self.assertTrue(restored.reach_active)
+
 
 class TestJsonlRoundtrip(unittest.TestCase):
     def test_multiple_steps_roundtrip(self):
@@ -113,7 +141,9 @@ class TestRecorderSingleObservation(unittest.TestCase):
                 palm_world=np.array([0.0, 0.0, 0.0]),
                 pelvis_pos=np.zeros(3),
                 pelvis_quat=np.array([1.0, 0.0, 0.0, 0.0]),
+                walk_cmd=(0.0, 0.0, 0.0),
                 reach_target_pelvis=(0.3, -0.2, 0.2),
+                reach_active=True,
                 grip_closed=False,
             )
             rec.finalize()
@@ -130,7 +160,9 @@ class TestRecorderTwoObservations(unittest.TestCase):
             base_kwargs = dict(
                 pelvis_pos=np.zeros(3),
                 pelvis_quat=np.array([1.0, 0.0, 0.0, 0.0]),
+                walk_cmd=(0.0, 0.0, 0.0),
                 reach_target_pelvis=(0.3, -0.2, 0.2),
+                reach_active=True,
             )
             rec.observe(
                 control_tick=0,
@@ -172,7 +204,9 @@ class TestRecorderRecordEvery(unittest.TestCase):
                 phase="SETTLE",
                 pelvis_pos=np.zeros(3),
                 pelvis_quat=np.array([1.0, 0.0, 0.0, 0.0]),
+                walk_cmd=(0.0, 0.0, 0.0),
                 reach_target_pelvis=(0.3, -0.2, 0.2),
+                reach_active=True,
                 grip_closed=False,
             )
             # Ticks 0, 1, 2 — only 0 and 2 should be recorded (even ticks)
@@ -201,11 +235,37 @@ class TestRecorderFramePath(unittest.TestCase):
                 palm_world=np.zeros(3),
                 pelvis_pos=np.zeros(3),
                 pelvis_quat=np.array([1.0, 0.0, 0.0, 0.0]),
+                walk_cmd=(0.0, 0.0, 0.0),
                 reach_target_pelvis=(0.3, -0.2, 0.2),
+                reach_active=True,
                 grip_closed=False,
             )
             rec.finalize()
             self.assertTrue(rec.steps[0].image_path.startswith("frames/frame_"))
+
+
+class TestRecorderWalkCmdAndReachActive(unittest.TestCase):
+    def test_stores_walk_cmd_and_reach_active(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rec = VLADemoRecorder(tmp, instruction="test", record_every=1)
+            rec.observe(
+                control_tick=0,
+                sim_time=0.0,
+                rgb=None,
+                phase="WALK",
+                palm_world=np.zeros(3),
+                pelvis_pos=np.zeros(3),
+                pelvis_quat=np.array([1.0, 0.0, 0.0, 0.0]),
+                walk_cmd=(0.1, 0.0, 0.2),
+                reach_target_pelvis=(0.3, -0.2, 0.2),
+                reach_active=False,
+                grip_closed=False,
+            )
+            rec.finalize()
+            step = rec.steps[0]
+            self.assertAlmostEqual(step.walk_cmd[0], 0.1)
+            self.assertAlmostEqual(step.walk_cmd[2], 0.2)
+            self.assertFalse(step.reach_active)
 
 
 if __name__ == "__main__":

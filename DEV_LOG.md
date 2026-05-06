@@ -811,3 +811,19 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
     --output-dir data/vla_replays/replay_000 \
     --mode arm-only
   ```
+
+---
+## [2026-05-05] Step 16: Hybrid Replay / Schema Upgrade
+- **Goal / Hypothesis:** Upgrade the VLA demonstration and replay interface after Step 15 showed that arm-only 7D replay is insufficient. The hypothesis is that replay quality will improve when locomotion context is included through recorded `walk_cmd`, while still allowing the 7D action adapter to control manipulation.
+- **Files Changed:**
+  - `vla_bridge/demo_schema.py` — added `walk_cmd` and `reach_active` to `VLADemoStep`
+  - `vla_bridge/demo_recorder.py` — records teacher walk/reach command fields
+  - `scripts/record_vla_demo.py` — saves full teacher `PolicyOutput` fields
+  - `scripts/replay_vla_demo.py` — added `teacher-command` and `hybrid-7d` replay modes
+  - `vla_bridge/replay_metrics.py` — added walk-command metrics
+  - `vla_bridge/__init__.py` — exports new helpers
+  - `tests/test_vla_demo_schema.py` — updated schema/recorder tests
+  - `tests/test_vla_replay_metrics.py` — updated replay metric tests
+  - `scripts/inspect_vla_demo.py` — prints walk_nonzero_steps and reach_active_steps
+  - `scripts/plot_vla_demo.py` — added walk_command_magnitude.png plot
+  - `DEV_LOG.md` — appended this entry

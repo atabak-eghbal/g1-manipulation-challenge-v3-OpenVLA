@@ -23,6 +23,7 @@ from vla_bridge.replay_metrics import (
     compute_replay_metrics,
     grip_mismatch_count,
     palm_error_metrics,
+    walk_command_magnitudes,
 )
 
 __all__ = [
@@ -47,4 +48,6 @@ __all__ = [
     "compute_replay_metrics",
     "grip_mismatch_count",
     "palm_error_metrics",
+    # Step 16 — walk command metrics
+    "walk_command_magnitudes",
 ]
