@@ -1,0 +1,14 @@
+{
+  "metadata": "data/vla_demos/demo_000/demo.jsonl",
+  "output_dir": "data/vla_replays/replay_000",
+  "mode": "arm-only",
+  "num_steps": 554,
+  "mean_palm_error_m": 0.26366714511474343,
+  "max_palm_error_m": 0.4686852714248318,
+  "final_palm_error_m": 0.30052173692437284,
+  "mean_action_magnitude_m": 0.00788488542545105,
+  "max_action_magnitude_m": 0.08456800232659496,
+  "grip_mismatch_count": 0,
+  "attached_steps": 0,
+  "ever_attached": false
+}
