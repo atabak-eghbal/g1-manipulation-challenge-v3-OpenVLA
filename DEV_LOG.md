@@ -747,3 +747,43 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass — all 9 unit tests pass and no runtime FSM files were modified.
 
 - **Next Risk:** Passing unit tests only proves the adapter math and policy contract. It does not prove the robot can execute a full 7D action sequence. Step 14 must record FSM teacher demonstrations, and Step 15 must replay those 7D actions through the adapter.
+
+---
+
+## [2026-05-06] Step 14: FSM Demonstration Recorder
+
+- **Goal / Hypothesis:** Run the existing FSM teacher and record a synchronized dataset of camera frames, FSM phases, palm positions, pelvis poses, reach targets, grip state, and derived 7D teacher actions — without modifying any FSM/controller/grasp runtime files and without introducing OpenVLA or model inference.
+
+- **Files Changed:**
+  - `vla_bridge/demo_schema.py` — pure Python + NumPy dataclass and JSONL serialization helpers
+  - `vla_bridge/demo_recorder.py` — stateful recorder that watches the FSM and saves synchronized records
+  - `vla_bridge/__init__.py` — exports Step 14 schema and recorder alongside Step 13 exports
+  - `scripts/record_vla_demo.py` — end-to-end script that runs FSM + recorder headlessly with CLI args
+  - `scripts/inspect_vla_demo.py` — lightweight inspection script to print summary stats from a JSONL file
+  - `tests/test_vla_demo_schema.py` — 13 pure unit tests for schema helpers and recorder logic
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands Run:**
+  - `python -m unittest tests.test_vla_demo_schema -v`
+
+- **Architecture Decisions:**
+  1. **Pending-step pattern:** The 7D action at step *t* is defined as `palm(t+1) − palm(t)`. Each observation is held as a pending record until the next observation arrives to supply the second palm position. The final observation is finalized with a zero-displacement action in `finalize()`.
+  2. **No MuJoCo in schema:** `demo_schema.py` and `demo_recorder.py` import only Python stdlib, NumPy, and each other. They can be imported and tested without MuJoCo.
+  3. **Graceful cv2 fallback:** Frame saving tries `cv2.imwrite` first; if cv2 is unavailable it falls back to `np.save` (`.npy`), allowing headless environments without OpenCV.
+  4. **FSM remains teacher:** The recorder does not produce any policy output and does not touch `ctrl`, `grasp_backend`, or any FSM state. It is a pure observer.
+  5. **`record_every` downsampling:** Recording at every physics step (200 Hz) would create unnecessarily large datasets. The default `--record-every 5` records at the control rate / 5 = 10 Hz.
+
+- **Verification Evidence:**
+  1. `test_correct_shape_returns_python_floats` — `as_float_tuple` returns Python floats.
+  2. `test_rejects_wrong_shape` — `as_float_tuple` raises ValueError on bad shape.
+  3. `test_xyz_delta_and_gripper_closed` — `make_action_7d` computes correct delta and gripper bit.
+  4. `test_single_step_roundtrip` — `VLADemoStep` round-trips through JSON.
+  5. `test_multiple_steps_roundtrip` — `write_jsonl` / `read_jsonl` round-trip multiple steps.
+  6. `test_finalizes_zero_action` — recorder finalizes zero action for a single observation.
+  7. `test_computes_palm_delta_action` — recorder computes correct delta across two observations.
+  8. `test_respects_record_every` — recorder skips non-boundary ticks.
+  9. `test_saves_frame_path_when_rgb_provided` — frame path is stored in step metadata.
+
+- **Pass / Fail:** Pass — all 13 unit tests pass; no FSM/controller/grasp runtime files were modified.
+
+- **Next Risk:** Step 15 — replay recorded 7D actions through the G1VLAActionAdapter and verify that the robot reproduces the teacher trajectory within a tolerable error bound.
