@@ -1,12 +1,17 @@
-"""VLA bridge package for future OpenVLA-style action experiments.
+"""VLA bridge package for OpenVLA-style action experiments."""
 
-This package is intentionally empty in Step 12.
+from vla_bridge.action_adapter import (
+    G1VLAActionAdapter,
+    clip_reach_target,
+    quat_apply_inverse,
+    validate_vector,
+    world_to_pelvis,
+)
 
-Planned modules:
-- demo_schema.py: data schema for image/action demonstrations
-- action_adapter.py: maps 7D VLA actions to G1 reacher/grip commands
-- recording helpers: save FSM rollouts as VLA-style demonstrations
-- replay helpers: test 7D actions before loading OpenVLA
-
-No runtime code should import OpenVLA from this package yet.
-"""
+__all__ = [
+    "G1VLAActionAdapter",
+    "clip_reach_target",
+    "quat_apply_inverse",
+    "validate_vector",
+    "world_to_pelvis",
+]
