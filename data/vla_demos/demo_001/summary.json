@@ -1,0 +1,23 @@
+{
+  "num_steps": 554,
+  "done_reached": true,
+  "first_phase": "SETTLE",
+  "last_phase": "DONE",
+  "unique_phases": [
+    "APPROACH_SOURCE",
+    "APPROACH_TARGET",
+    "DESCEND_SOURCE",
+    "DONE",
+    "HOVER_SOURCE",
+    "HOVER_TARGET",
+    "LIFT_SOURCE",
+    "LOWER_TARGET",
+    "RETRACT",
+    "SETTLE"
+  ],
+  "max_action_xyz_m": 0.08456800232659496,
+  "mean_action_xyz_m": 0.00788488542545105,
+  "grip_closed_steps": 380,
+  "walk_nonzero_steps": 255,
+  "reach_active_steps": 507
+}

@@ -1,0 +1,16 @@
+{
+  "metadata": "data/vla_demos/demo_002_every_tick/demo.jsonl",
+  "output_dir": "data/vla_replays/replay_002_teacher",
+  "mode": "teacher-command",
+  "num_steps": 2766,
+  "mean_palm_error_m": 0.0,
+  "max_palm_error_m": 0.0,
+  "final_palm_error_m": 0.0,
+  "mean_action_magnitude_m": 0.0016406439064965631,
+  "max_action_magnitude_m": 0.01748103854992822,
+  "grip_mismatch_count": 0,
+  "walk_nonzero_steps": 1276,
+  "reach_active_steps": 2531,
+  "attached_steps": 1902,
+  "ever_attached": true
+}

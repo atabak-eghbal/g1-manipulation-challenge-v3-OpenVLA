@@ -1,0 +1,16 @@
+{
+  "metadata": "data/vla_demos/demo_001/demo.jsonl",
+  "output_dir": "data/vla_replays/replay_001_hybrid",
+  "mode": "hybrid-7d",
+  "num_steps": 554,
+  "mean_palm_error_m": 0.25943467444982243,
+  "max_palm_error_m": 0.48088513912099906,
+  "final_palm_error_m": 0.26439324205749914,
+  "mean_action_magnitude_m": 0.00788488542545105,
+  "max_action_magnitude_m": 0.08456800232659496,
+  "grip_mismatch_count": 0,
+  "walk_nonzero_steps": 255,
+  "reach_active_steps": 507,
+  "attached_steps": 0,
+  "ever_attached": false
+}
