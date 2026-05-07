@@ -1,0 +1,383 @@
+{
+  "source_dataset": "data/vla_exports/batch_001_perturbed_g1_native/dataset.jsonl",
+  "num_records": 11119,
+  "action_vector_shape": [
+    11119,
+    8
+  ],
+  "phase_counts": {
+    "APPROACH_SOURCE": 400,
+    "APPROACH_TARGET": 4800,
+    "CLOSE_GRIP": 204,
+    "DESCEND_SOURCE": 1057,
+    "HOVER_SOURCE": 452,
+    "HOVER_TARGET": 800,
+    "LIFT_SOURCE": 800,
+    "LOWER_TARGET": 1200,
+    "OPEN_GRIP": 6,
+    "RETRACT": 800,
+    "SETTLE": 600
+  },
+  "phase_segments": [
+    {
+      "phase": "SETTLE",
+      "start_sample_index": 0,
+      "end_sample_index": 149,
+      "length": 150
+    },
+    {
+      "phase": "APPROACH_SOURCE",
+      "start_sample_index": 150,
+      "end_sample_index": 233,
+      "length": 84
+    },
+    {
+      "phase": "HOVER_SOURCE",
+      "start_sample_index": 234,
+      "end_sample_index": 260,
+      "length": 27
+    },
+    {
+      "phase": "DESCEND_SOURCE",
+      "start_sample_index": 261,
+      "end_sample_index": 560,
+      "length": 300
+    },
+    {
+      "phase": "CLOSE_GRIP",
+      "start_sample_index": 561,
+      "end_sample_index": 562,
+      "length": 2
+    },
+    {
+      "phase": "LIFT_SOURCE",
+      "start_sample_index": 563,
+      "end_sample_index": 762,
+      "length": 200
+    },
+    {
+      "phase": "APPROACH_TARGET",
+      "start_sample_index": 763,
+      "end_sample_index": 1962,
+      "length": 1200
+    },
+    {
+      "phase": "HOVER_TARGET",
+      "start_sample_index": 1963,
+      "end_sample_index": 2162,
+      "length": 200
+    },
+    {
+      "phase": "LOWER_TARGET",
+      "start_sample_index": 2163,
+      "end_sample_index": 2462,
+      "length": 300
+    },
+    {
+      "phase": "OPEN_GRIP",
+      "start_sample_index": 2463,
+      "end_sample_index": 2464,
+      "length": 2
+    },
+    {
+      "phase": "RETRACT",
+      "start_sample_index": 2465,
+      "end_sample_index": 2664,
+      "length": 200
+    },
+    {
+      "phase": "SETTLE",
+      "start_sample_index": 2665,
+      "end_sample_index": 2814,
+      "length": 150
+    },
+    {
+      "phase": "APPROACH_SOURCE",
+      "start_sample_index": 2815,
+      "end_sample_index": 2910,
+      "length": 96
+    },
+    {
+      "phase": "HOVER_SOURCE",
+      "start_sample_index": 2911,
+      "end_sample_index": 3110,
+      "length": 200
+    },
+    {
+      "phase": "DESCEND_SOURCE",
+      "start_sample_index": 3111,
+      "end_sample_index": 3410,
+      "length": 300
+    },
+    {
+      "phase": "CLOSE_GRIP",
+      "start_sample_index": 3411,
+      "end_sample_index": 3510,
+      "length": 100
+    },
+    {
+      "phase": "LIFT_SOURCE",
+      "start_sample_index": 3511,
+      "end_sample_index": 3710,
+      "length": 200
+    },
+    {
+      "phase": "APPROACH_TARGET",
+      "start_sample_index": 3711,
+      "end_sample_index": 4910,
+      "length": 1200
+    },
+    {
+      "phase": "HOVER_TARGET",
+      "start_sample_index": 4911,
+      "end_sample_index": 5110,
+      "length": 200
+    },
+    {
+      "phase": "LOWER_TARGET",
+      "start_sample_index": 5111,
+      "end_sample_index": 5410,
+      "length": 300
+    },
+    {
+      "phase": "OPEN_GRIP",
+      "start_sample_index": 5411,
+      "end_sample_index": 5411,
+      "length": 1
+    },
+    {
+      "phase": "RETRACT",
+      "start_sample_index": 5412,
+      "end_sample_index": 5611,
+      "length": 200
+    },
+    {
+      "phase": "SETTLE",
+      "start_sample_index": 5612,
+      "end_sample_index": 5761,
+      "length": 150
+    },
+    {
+      "phase": "APPROACH_SOURCE",
+      "start_sample_index": 5762,
+      "end_sample_index": 5873,
+      "length": 112
+    },
+    {
+      "phase": "HOVER_SOURCE",
+      "start_sample_index": 5874,
+      "end_sample_index": 6073,
+      "length": 200
+    },
+    {
+      "phase": "DESCEND_SOURCE",
+      "start_sample_index": 6074,
+      "end_sample_index": 6373,
+      "length": 300
+    },
+    {
+      "phase": "CLOSE_GRIP",
+      "start_sample_index": 6374,
+      "end_sample_index": 6473,
+      "length": 100
+    },
+    {
+      "phase": "LIFT_SOURCE",
+      "start_sample_index": 6474,
+      "end_sample_index": 6673,
+      "length": 200
+    },
+    {
+      "phase": "APPROACH_TARGET",
+      "start_sample_index": 6674,
+      "end_sample_index": 7873,
+      "length": 1200
+    },
+    {
+      "phase": "HOVER_TARGET",
+      "start_sample_index": 7874,
+      "end_sample_index": 8073,
+      "length": 200
+    },
+    {
+      "phase": "LOWER_TARGET",
+      "start_sample_index": 8074,
+      "end_sample_index": 8373,
+      "length": 300
+    },
+    {
+      "phase": "OPEN_GRIP",
+      "start_sample_index": 8374,
+      "end_sample_index": 8374,
+      "length": 1
+    },
+    {
+      "phase": "RETRACT",
+      "start_sample_index": 8375,
+      "end_sample_index": 8574,
+      "length": 200
+    },
+    {
+      "phase": "SETTLE",
+      "start_sample_index": 8575,
+      "end_sample_index": 8724,
+      "length": 150
+    },
+    {
+      "phase": "APPROACH_SOURCE",
+      "start_sample_index": 8725,
+      "end_sample_index": 8832,
+      "length": 108
+    },
+    {
+      "phase": "HOVER_SOURCE",
+      "start_sample_index": 8833,
+      "end_sample_index": 8857,
+      "length": 25
+    },
+    {
+      "phase": "DESCEND_SOURCE",
+      "start_sample_index": 8858,
+      "end_sample_index": 9014,
+      "length": 157
+    },
+    {
+      "phase": "CLOSE_GRIP",
+      "start_sample_index": 9015,
+      "end_sample_index": 9016,
+      "length": 2
+    },
+    {
+      "phase": "LIFT_SOURCE",
+      "start_sample_index": 9017,
+      "end_sample_index": 9216,
+      "length": 200
+    },
+    {
+      "phase": "APPROACH_TARGET",
+      "start_sample_index": 9217,
+      "end_sample_index": 10416,
+      "length": 1200
+    },
+    {
+      "phase": "HOVER_TARGET",
+      "start_sample_index": 10417,
+      "end_sample_index": 10616,
+      "length": 200
+    },
+    {
+      "phase": "LOWER_TARGET",
+      "start_sample_index": 10617,
+      "end_sample_index": 10916,
+      "length": 300
+    },
+    {
+      "phase": "OPEN_GRIP",
+      "start_sample_index": 10917,
+      "end_sample_index": 10918,
+      "length": 2
+    },
+    {
+      "phase": "RETRACT",
+      "start_sample_index": 10919,
+      "end_sample_index": 11118,
+      "length": 200
+    }
+  ],
+  "boolean_balance": {
+    "reach_active_true": 10115,
+    "reach_active_false": 1004,
+    "reach_active_true_fraction": 0.9097041100818419,
+    "grip_closed_true": 7804,
+    "grip_closed_false": 3315,
+    "grip_closed_true_fraction": 0.701861678208472
+  },
+  "action_statistics": {
+    "walk_x": {
+      "min": 0.0,
+      "max": 0.35,
+      "mean": 0.07538807446712834,
+      "std": 0.09115999582297815
+    },
+    "walk_y": {
+      "min": 0.0,
+      "max": 0.18,
+      "mean": 0.05763283973509378,
+      "std": 0.08251590893127664
+    },
+    "walk_yaw": {
+      "min": -1.0,
+      "max": 0.25,
+      "mean": -0.11327099322664703,
+      "std": 0.3537621033693488
+    },
+    "reach_x": {
+      "min": 0.2729625403881073,
+      "max": 0.5209023356437683,
+      "mean": 0.33457601496304673,
+      "std": 0.06219893911861885
+    },
+    "reach_y": {
+      "min": -0.2,
+      "max": -0.029999999329447746,
+      "mean": -0.1436267305977662,
+      "std": 0.07956357482362414
+    },
+    "reach_z": {
+      "min": -0.05813269317150116,
+      "max": 0.2,
+      "mean": 0.14350178282349774,
+      "std": 0.08863275741044677
+    },
+    "reach_active": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.9097041100818419,
+      "std": 0.286605202643019
+    },
+    "grip_closed": {
+      "min": 0.0,
+      "max": 1.0,
+      "mean": 0.701861678208472,
+      "std": 0.4574405566528391
+    }
+  },
+  "magnitude_statistics": {
+    "mean_walk_cmd_magnitude": 0.2290915464464115,
+    "max_walk_cmd_magnitude": 1.0071742649611337,
+    "zero_walk_records": 5954,
+    "nonzero_walk_records": 5165,
+    "mean_reach_target_norm": 0.4120552214734247,
+    "max_reach_target_norm": 0.5258229421749705
+  },
+  "idle_runs": [
+    {
+      "start_sample_index": 0,
+      "end_sample_index": 150,
+      "length": 151,
+      "phase": "MIXED"
+    },
+    {
+      "start_sample_index": 2665,
+      "end_sample_index": 2815,
+      "length": 151,
+      "phase": "MIXED"
+    },
+    {
+      "start_sample_index": 5612,
+      "end_sample_index": 5762,
+      "length": 151,
+      "phase": "MIXED"
+    },
+    {
+      "start_sample_index": 8575,
+      "end_sample_index": 8725,
+      "length": 151,
+      "phase": "MIXED"
+    }
+  ],
+  "warnings": [
+    "Found 4 idle-heavy run(s). Consider filtering or weighting.",
+    "This appears to be a single-trajectory dataset. Validation splits are debugging splits, not robust generalization estimates."
+  ]
+}

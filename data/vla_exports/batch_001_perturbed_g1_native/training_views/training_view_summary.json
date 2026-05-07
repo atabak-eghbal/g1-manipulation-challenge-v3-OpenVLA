@@ -1,0 +1,57 @@
+{
+  "view_name": "g1_native_training_views",
+  "source_records": 11119,
+  "filtered_records": 10490,
+  "removed_records": 629,
+  "source_phase_counts": {
+    "APPROACH_SOURCE": 400,
+    "APPROACH_TARGET": 4800,
+    "CLOSE_GRIP": 204,
+    "DESCEND_SOURCE": 1057,
+    "HOVER_SOURCE": 452,
+    "HOVER_TARGET": 800,
+    "LIFT_SOURCE": 800,
+    "LOWER_TARGET": 1200,
+    "OPEN_GRIP": 6,
+    "RETRACT": 800,
+    "SETTLE": 600
+  },
+  "filtered_phase_counts": {
+    "APPROACH_SOURCE": 365,
+    "APPROACH_TARGET": 4800,
+    "CLOSE_GRIP": 204,
+    "DESCEND_SOURCE": 1057,
+    "HOVER_SOURCE": 448,
+    "HOVER_TARGET": 800,
+    "LIFT_SOURCE": 800,
+    "LOWER_TARGET": 1200,
+    "OPEN_GRIP": 6,
+    "RETRACT": 800,
+    "SETTLE": 10
+  },
+  "rare_transition_records_source": {
+    "CLOSE_GRIP": 204,
+    "OPEN_GRIP": 6
+  },
+  "rare_transition_records_filtered": {
+    "CLOSE_GRIP": 204,
+    "OPEN_GRIP": 6
+  },
+  "idle_records_source": 639,
+  "idle_records_filtered": 10,
+  "weight_count": 11119,
+  "min_weight": 0.17608890489798618,
+  "max_weight": 20.0,
+  "mean_weight": 1.0,
+  "warnings": [
+    "This is still a single-trajectory dataset. Weighted/filtered views are debugging aids, not robust generalization data."
+  ],
+  "keep_first_n_idle": 10,
+  "rare_phase_boost": 5.0,
+  "files": {
+    "full": "data/vla_exports/batch_001_perturbed_g1_native/training_views/full.jsonl",
+    "filtered_no_idle": "data/vla_exports/batch_001_perturbed_g1_native/training_views/filtered_no_idle.jsonl",
+    "sample_weights": "data/vla_exports/batch_001_perturbed_g1_native/training_views/sample_weights.jsonl",
+    "summary": "data/vla_exports/batch_001_perturbed_g1_native/training_views/training_view_summary.json"
+  }
+}

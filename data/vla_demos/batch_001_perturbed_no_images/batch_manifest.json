@@ -1,0 +1,162 @@
+{
+  "batch_id": "batch_001_perturbed_no_images",
+  "output_root": "data/vla_demos/batch_001_perturbed_no_images",
+  "created_unix_time": 1778141115.1272287,
+  "num_requested": 5,
+  "num_completed": 5,
+  "num_failed": 0,
+  "record_every": 1,
+  "camera": "head_cam",
+  "no_images": true,
+  "max_ticks": 4000,
+  "demos": [
+    {
+      "demo_id": "demo_000",
+      "output_dir": "data/vla_demos/batch_001_perturbed_no_images/demo_000",
+      "metadata_path": "data/vla_demos/batch_001_perturbed_no_images/demo_000/demo.jsonl",
+      "summary_path": "data/vla_demos/batch_001_perturbed_no_images/demo_000/summary.json",
+      "status": "success",
+      "done_reached": true,
+      "num_steps": 2766,
+      "num_frames": 0,
+      "error": "",
+      "scenario_id": "nominal",
+      "seed": 0,
+      "scenario": {
+        "scenario_id": "nominal",
+        "seed": 0,
+        "red_block_xy_offset_m": [
+          0.0,
+          0.0
+        ],
+        "robot_base_xy_offset_m": [
+          0.0,
+          0.0
+        ],
+        "target_drop_xy_offset_m": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "demo_id": "demo_001",
+      "output_dir": "data/vla_demos/batch_001_perturbed_no_images/demo_001",
+      "metadata_path": "data/vla_demos/batch_001_perturbed_no_images/demo_001/demo.jsonl",
+      "summary_path": "data/vla_demos/batch_001_perturbed_no_images/demo_001/summary.json",
+      "status": "success",
+      "done_reached": true,
+      "num_steps": 3048,
+      "num_frames": 0,
+      "error": "",
+      "scenario_id": "cyl_x_plus_02",
+      "seed": 101,
+      "scenario": {
+        "scenario_id": "cyl_x_plus_02",
+        "seed": 101,
+        "red_block_xy_offset_m": [
+          0.02,
+          0.0
+        ],
+        "robot_base_xy_offset_m": [
+          0.0,
+          0.0
+        ],
+        "target_drop_xy_offset_m": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "demo_id": "demo_002",
+      "output_dir": "data/vla_demos/batch_001_perturbed_no_images/demo_002",
+      "metadata_path": "data/vla_demos/batch_001_perturbed_no_images/demo_002/demo.jsonl",
+      "summary_path": "data/vla_demos/batch_001_perturbed_no_images/demo_002/summary.json",
+      "status": "success",
+      "done_reached": true,
+      "num_steps": 3064,
+      "num_frames": 0,
+      "error": "",
+      "scenario_id": "cyl_x_minus_02",
+      "seed": 102,
+      "scenario": {
+        "scenario_id": "cyl_x_minus_02",
+        "seed": 102,
+        "red_block_xy_offset_m": [
+          -0.02,
+          0.0
+        ],
+        "robot_base_xy_offset_m": [
+          0.0,
+          0.0
+        ],
+        "target_drop_xy_offset_m": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "demo_id": "demo_003",
+      "output_dir": "data/vla_demos/batch_001_perturbed_no_images/demo_003",
+      "metadata_path": "data/vla_demos/batch_001_perturbed_no_images/demo_003/demo.jsonl",
+      "summary_path": "data/vla_demos/batch_001_perturbed_no_images/demo_003/summary.json",
+      "status": "success",
+      "done_reached": true,
+      "num_steps": 2645,
+      "num_frames": 0,
+      "error": "",
+      "scenario_id": "cyl_y_plus_02",
+      "seed": 103,
+      "scenario": {
+        "scenario_id": "cyl_y_plus_02",
+        "seed": 103,
+        "red_block_xy_offset_m": [
+          0.0,
+          0.02
+        ],
+        "robot_base_xy_offset_m": [
+          0.0,
+          0.0
+        ],
+        "target_drop_xy_offset_m": [
+          0.0,
+          0.0
+        ]
+      }
+    },
+    {
+      "demo_id": "demo_004",
+      "output_dir": "data/vla_demos/batch_001_perturbed_no_images/demo_004",
+      "metadata_path": "data/vla_demos/batch_001_perturbed_no_images/demo_004/demo.jsonl",
+      "summary_path": "data/vla_demos/batch_001_perturbed_no_images/demo_004/summary.json",
+      "status": "success",
+      "done_reached": false,
+      "num_steps": 4000,
+      "num_frames": 0,
+      "error": "",
+      "scenario_id": "cyl_y_minus_02",
+      "seed": 104,
+      "scenario": {
+        "scenario_id": "cyl_y_minus_02",
+        "seed": 104,
+        "red_block_xy_offset_m": [
+          0.0,
+          -0.02
+        ],
+        "robot_base_xy_offset_m": [
+          0.0,
+          0.0
+        ],
+        "target_drop_xy_offset_m": [
+          0.0,
+          0.0
+        ]
+      }
+    }
+  ],
+  "scenario_config_path": "configs/scenarios/small_perturbations.json",
+  "scenario_config_name": "small_perturbations_v1",
+  "scenario_count": 5
+}

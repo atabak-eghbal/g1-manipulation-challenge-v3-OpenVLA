@@ -1,0 +1,16 @@
+{
+  "batch_id": "batch_001_perturbed_dryrun",
+  "output_root": "data/vla_demos/batch_001_perturbed_dryrun",
+  "created_unix_time": 1778141083.707989,
+  "num_requested": 5,
+  "num_completed": 0,
+  "num_failed": 0,
+  "record_every": 1,
+  "camera": "head_cam",
+  "no_images": true,
+  "max_ticks": 4000,
+  "demos": [],
+  "scenario_config_path": "configs/scenarios/small_perturbations.json",
+  "scenario_config_name": "small_perturbations_v1",
+  "scenario_count": 5
+}
