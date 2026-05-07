@@ -64,6 +64,20 @@ from vla_bridge.training_views import (
     walk_magnitude,
     write_weight_jsonl,
 )
+from vla_bridge.batch_manifest import (
+    STATUS_FAILED,
+    STATUS_SUCCESS,
+    BatchManifest,
+    DemoRunRecord,
+    build_batch_manifest,
+    demo_record_from_summary,
+    failed_demo_record,
+    make_demo_id,
+    manifest_summary,
+    read_batch_manifest,
+    successful_demo_paths,
+    write_batch_manifest,
+)
 
 __all__ = [
     # Step 13 — action adapter
@@ -125,4 +139,17 @@ __all__ = [
     "training_view_summary",
     "walk_magnitude",
     "write_weight_jsonl",
+    # Step 20 — batch manifest
+    "STATUS_FAILED",
+    "STATUS_SUCCESS",
+    "BatchManifest",
+    "DemoRunRecord",
+    "build_batch_manifest",
+    "demo_record_from_summary",
+    "failed_demo_record",
+    "make_demo_id",
+    "manifest_summary",
+    "read_batch_manifest",
+    "successful_demo_paths",
+    "write_batch_manifest",
 ]

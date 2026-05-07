@@ -971,3 +971,45 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass.
 
 - **Next Risk:** If filtering/weighting works, the next meaningful step is either collecting multiple randomized demonstrations or building a tiny non-OpenVLA supervised baseline to validate the data pipeline end-to-end.
+
+---
+
+## [2026-05-06] Step 20: Multi-Demo Collection + Batch Manifest
+
+- **Goal / Hypothesis:** Add a repeatable batch demonstration collection layer so the VLA branch is no longer structurally limited to a single rollout. The hypothesis is that before any OpenVLA inference or fine-tuning, we need multiple teacher demonstrations and a manifest that records which demos succeeded.
+
+- **Reasoning:** Step 18 and Step 19 showed that the current dataset is useful for debugging but not robust learning: it is single-trajectory, phase-imbalanced, and contains rare grip transition states. Step 20 introduces the infrastructure needed to collect multiple demonstrations and later export/audit them as a combined dataset.
+
+- **Files Changed:**
+  - `vla_bridge/batch_manifest.py` — pure manifest dataclasses and helpers
+  - `scripts/record_vla_demo_batch.py` — batch recorder CLI that calls the existing single-demo recorder
+  - `tests/test_vla_batch_manifest.py` — unit tests for manifest logic
+  - `vla_bridge/__init__.py` — exports batch manifest helpers
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands to Run:**
+
+  ```bash
+  python -m unittest tests/test_vla_batch_manifest.py
+  python scripts/record_vla_demo_batch.py \
+    --output-root data/vla_demos/batch_000_no_images \
+    --num-demos 2 \
+    --record-every 1 \
+    --no-images \
+    --continue-on-fail
+  ```
+
+- **Expected Result:** The batch recorder writes `batch_manifest.json` under the output root. Each demo has its own folder with `demo.jsonl` and `summary.json`. The manifest records demo IDs, output paths, status, completion state, step counts, frame counts, and errors if any demo fails.
+
+- **Architecture Decision:** The batch recorder calls the existing single-demo recorder via subprocess instead of duplicating the recorder internals. This keeps Step 20 isolated and preserves the behavior already validated in Step 14.
+
+- **Verification Evidence:**
+  - `test_vla_batch_manifest.py` passes 9 unit tests.
+  - Dry-run mode correctly predicts commands and writes an empty manifest.
+  - Real no-image batch recording successfully collected 2 full demonstrations.
+  - `batch_manifest.json` correctly reports `num_completed=2` and `total_steps=5532`.
+  - Both batch demos reached `DONE` and were correctly attached.
+
+- **Pass / Fail:** Pass.
+
+- **Next Risk:** After batch collection works, Step 21 should combine successful batch demos into a single G1-native dataset. However, because the current environment is deterministic, all demos in a batch are currently identical. Future work will need scene perturbations to create diverse data.
