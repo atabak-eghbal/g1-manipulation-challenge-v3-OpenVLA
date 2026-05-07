@@ -51,6 +51,19 @@ from vla_bridge.dataset_audit import (
     write_audit_report,
     write_split_manifests,
 )
+from vla_bridge.training_views import (
+    RARE_TRANSITION_PHASES,
+    build_training_views,
+    build_weight_records,
+    compute_phase_weights,
+    filter_idle_records,
+    is_idle_record,
+    normalize_weights,
+    read_weight_jsonl,
+    training_view_summary,
+    walk_magnitude,
+    write_weight_jsonl,
+)
 
 __all__ = [
     # Step 13 — action adapter
@@ -100,4 +113,16 @@ __all__ = [
     "phase_transition_counts",
     "write_audit_report",
     "write_split_manifests",
+    # Step 19 — training views
+    "RARE_TRANSITION_PHASES",
+    "build_training_views",
+    "build_weight_records",
+    "compute_phase_weights",
+    "filter_idle_records",
+    "is_idle_record",
+    "normalize_weights",
+    "read_weight_jsonl",
+    "training_view_summary",
+    "walk_magnitude",
+    "write_weight_jsonl",
 ]

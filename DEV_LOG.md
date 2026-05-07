@@ -931,3 +931,43 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass.
 
 - **Next Risk:** Even with a clean dataset, the current single-trajectory data is insufficient for generalization. Future steps should focus on collecting diverse demonstrations and then establishing a shadow inference baseline (running OpenVLA in parallel with the FSM) to measure "prediction error" without taking control.
+
+---
+
+## [2026-05-06] Step 19: Dataset Filtering / Sample Weighting / Training Views
+
+- **Goal / Hypothesis:** Build safer training views from the G1-native dataset before attempting any OpenVLA shadow inference or fine-tuning. The hypothesis is that the single-rollout dataset needs filtering and weighting because Step 18 revealed phase imbalance, rare grip transitions, and an idle-heavy run.
+
+- **Reasoning:** Step 18 showed that the dataset is structurally valid but not yet robust learning data. `APPROACH_TARGET` dominates the dataset while `CLOSE_GRIP` and `OPEN_GRIP` each appear only twice. A naive supervised baseline could overfit to long transport behavior and under-learn grip transitions.
+
+- **Files Changed:**
+  - `vla_bridge/training_views.py` — pure filtering, weighting, and training-view helpers
+  - `scripts/build_g1_native_training_views.py` — CLI tool for generating full/filtered/weighted views
+  - `tests/test_g1_native_training_views.py` — unit tests for filtering and weighting logic
+  - `vla_bridge/__init__.py` — exports training-view helpers
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands to Run:**
+
+  ```bash
+  python -m unittest tests/test_g1_native_training_views.py
+  python scripts/build_g1_native_training_views.py \
+    data/vla_exports/g1_native_demo_002/dataset.jsonl \
+    --output-dir data/vla_exports/g1_native_demo_002/training_views
+  ```
+
+- **Expected Result:** The training-view script writes `full.jsonl`, `filtered_no_idle.jsonl`, `sample_weights.jsonl`, and `training_view_summary.json`. Rare transition phases are preserved. Idle-heavy records are reduced. Sample weights are normalized to mean 1.0 and give higher weights to rare phases.
+
+- **Architecture Decision:** Keep the raw exported dataset unchanged and create derived training views. This preserves evidence integrity while allowing future model experiments to choose between full, filtered, and weighted manifests.
+
+- **Verification Evidence:**
+  - `test_g1_native_training_views.py` passes 11 unit tests.
+  - Builder script removed 149 idle records while keeping the first 10.
+  - Rare transition phases (`CLOSE_GRIP`, `OPEN_GRIP`) were preserved in the filtered view.
+  - Sample weights were normalized to mean 1.0.
+  - Rare phases received higher weights (up to `max_weight=20.0`).
+  - No OpenVLA/Hugging Face/PyTorch dependency was introduced.
+
+- **Pass / Fail:** Pass.
+
+- **Next Risk:** If filtering/weighting works, the next meaningful step is either collecting multiple randomized demonstrations or building a tiny non-OpenVLA supervised baseline to validate the data pipeline end-to-end.
