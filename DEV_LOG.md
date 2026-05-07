@@ -1155,3 +1155,44 @@ combined dataset preserves scenario metadata,
 audit/training-view tools still run on the perturbed combined dataset.
 Pass / Fail: Pending.
 Next Risk: Even small perturbations may break FSM success if source approach thresholds are too tight. If success drops, reduce offsets from 2 cm to 1 cm or start with x-only perturbations.
+
+## [2026-05-07] Step 23: Scripted Keyboard Teacher MVP
+
+Goal / Hypothesis:
+Add a scripted keyboard-style teacher that uses timed high-level commands to drive the same controller fields as the original manual keyboard path. The hypothesis is that this teacher can become a more tunable and reproducible alternative to the FSM teacher while still feeding the same VLA demo/data pipeline.
+
+Reasoning:
+Step 22 showed that scenario perturbations expose FSM teacher fragility. Some runs reached DONE without true pick/place success, and one perturbed run failed to reach DONE. A scripted keyboard teacher gives us another teacher source: deterministic like the FSM, but easier to tune as a trajectory/macro.
+
+Architecture Decision:
+Implement the scripted keyboard teacher as a separate recording path, not as a replacement for the FSM. The script writes the same VLA demo schema and can later be exported/audited with the existing tools.
+
+Files Changed:
+- configs/scripts/nominal_scripted_keyboard_v1.json (new)
+- vla_bridge/scripted_keyboard.py (new)
+- scripts/record_scripted_keyboard_demo.py (new)
+- scripts/inspect_scripted_keyboard_plan.py (new)
+- tests/test_scripted_keyboard.py (new)
+- vla_bridge/__init__.py (updated exports)
+- DEV_LOG.md (this entry)
+
+Commands to Run:
+  python -m unittest tests/test_scripted_keyboard.py
+
+  python scripts/inspect_scripted_keyboard_plan.py \
+    configs/scripts/nominal_scripted_keyboard_v1.json
+
+  python scripts/record_scripted_keyboard_demo.py \
+    --script-config configs/scripts/nominal_scripted_keyboard_v1.json \
+    --output-dir data/vla_demos/scripted_keyboard_000_no_images \
+    --record-every 1 \
+    --no-images
+
+  python scripts/inspect_vla_demo.py \
+    data/vla_demos/scripted_keyboard_000_no_images/demo.jsonl
+
+Expected Result:
+The unit tests pass. The plan inspector reports the expected phases and total duration. The recorder produces a demo.jsonl and summary.json. The summary identifies teacher_type=scripted_keyboard and records script phases as demo phases.
+
+Pass / Fail: Pending.
+Next Risk: A fixed open-loop keyboard macro may not solve the full task, especially under perturbations. Later steps should add task-success metrics and optionally feedback checkpoints.

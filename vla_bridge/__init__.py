@@ -92,6 +92,16 @@ from vla_bridge.scenario_config import (
     select_scenario,
 )
 from vla_bridge.batch_diversity import summarize_manifest_diversity
+from vla_bridge.scripted_keyboard import (
+    ScriptedKeyboardStep,
+    ScriptedKeyboardPlan,
+    ExpandedScriptedCommand,
+    load_scripted_keyboard_plan,
+    validate_scripted_keyboard_plan,
+    expand_scripted_keyboard_plan,
+    command_for_tick,
+    plan_summary,
+)
 
 __all__ = [
     # Step 13 — action adapter
@@ -178,4 +188,13 @@ __all__ = [
     "select_scenario",
     "scenario_to_metadata",
     "summarize_manifest_diversity",
+    # Step 23 — scripted keyboard
+    "ScriptedKeyboardStep",
+    "ScriptedKeyboardPlan",
+    "ExpandedScriptedCommand",
+    "load_scripted_keyboard_plan",
+    "validate_scripted_keyboard_plan",
+    "expand_scripted_keyboard_plan",
+    "command_for_tick",
+    "plan_summary",
 ]

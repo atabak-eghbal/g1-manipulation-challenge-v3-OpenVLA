@@ -1,0 +1,104 @@
+{
+  "name": "nominal_scripted_keyboard_v1",
+  "teacher_type": "scripted_keyboard",
+  "description": "MVP scripted keyboard-style teacher for the G1 pick-and-place task. Uses timed high-level controller commands rather than FSM state logic.",
+  "control_dt": 0.02,
+  "steps": [
+    {
+      "name": "settle",
+      "duration_ticks": 150,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.3, -0.2, 0.2],
+      "reach_active": false,
+      "grip_closed": false
+    },
+    {
+      "name": "walk_forward_to_source",
+      "duration_ticks": 90,
+      "walk_cmd": [0.30, 0.0, 0.0],
+      "reach_target": [0.3, -0.2, 0.2],
+      "reach_active": true,
+      "grip_closed": false
+    },
+    {
+      "name": "stop_and_hover_source",
+      "duration_ticks": 120,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.32, -0.05, 0.18],
+      "reach_active": true,
+      "grip_closed": false
+    },
+    {
+      "name": "descend_source",
+      "duration_ticks": 180,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.32, -0.05, 0.04],
+      "reach_active": true,
+      "grip_closed": false
+    },
+    {
+      "name": "close_grip",
+      "duration_ticks": 80,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.32, -0.05, 0.04],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "lift_source",
+      "duration_ticks": 180,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.3, -0.2, 0.2],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "turn_toward_target",
+      "duration_ticks": 400,
+      "walk_cmd": [0.12, 0.0, -1.0],
+      "reach_target": [0.3, -0.2, 0.2],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "approach_target",
+      "duration_ticks": 700,
+      "walk_cmd": [0.18, 0.0, 0.0],
+      "reach_target": [0.3, -0.2, 0.2],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "hover_target",
+      "duration_ticks": 150,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.34, -0.08, 0.18],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "lower_target",
+      "duration_ticks": 200,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.34, -0.08, 0.04],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "open_grip",
+      "duration_ticks": 80,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.34, -0.08, 0.04],
+      "reach_active": true,
+      "grip_closed": false
+    },
+    {
+      "name": "retract",
+      "duration_ticks": 200,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.3, -0.2, 0.2],
+      "reach_active": true,
+      "grip_closed": false
+    }
+  ]
+}

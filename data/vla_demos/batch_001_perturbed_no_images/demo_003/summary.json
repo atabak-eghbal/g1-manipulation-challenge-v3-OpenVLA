@@ -1,0 +1,50 @@
+{
+  "num_steps": 2645,
+  "num_frames": 0,
+  "done_reached": true,
+  "first_phase": "SETTLE",
+  "last_phase": "DONE",
+  "unique_phases": [
+    "APPROACH_SOURCE",
+    "APPROACH_TARGET",
+    "CLOSE_GRIP",
+    "DESCEND_SOURCE",
+    "DONE",
+    "HOVER_SOURCE",
+    "HOVER_TARGET",
+    "LIFT_SOURCE",
+    "LOWER_TARGET",
+    "OPEN_GRIP",
+    "RETRACT",
+    "SETTLE"
+  ],
+  "max_action_xyz_m": 0.03486015159414144,
+  "mean_action_xyz_m": 0.002227201786756791,
+  "grip_closed_steps": 1902,
+  "walk_nonzero_steps": 1297,
+  "reach_active_steps": 2386,
+  "scenario_id": "cyl_y_plus_02",
+  "seed": 103,
+  "scenario": {
+    "red_block_xy_offset_m": [
+      0.0,
+      0.02
+    ],
+    "red_block_body_id": 47,
+    "red_block_qposadr": 50,
+    "red_block_pos_before": [
+      0.0,
+      0.026,
+      0.85
+    ],
+    "red_block_pos_after": [
+      0.0,
+      0.046,
+      0.85
+    ]
+  },
+  "red_block_xy_offset_m": [
+    0.0,
+    0.02
+  ]
+}

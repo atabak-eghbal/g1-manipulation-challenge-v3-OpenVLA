@@ -1,0 +1,34 @@
+{
+  "num_steps": 506,
+  "num_frames": 506,
+  "script_name": "nominal_scripted_keyboard_v1",
+  "teacher_type": "scripted_keyboard",
+  "first_phase": "settle",
+  "last_phase": "retract",
+  "unique_phases": [
+    "approach_target",
+    "close_grip",
+    "descend_source",
+    "hover_target",
+    "lift_source",
+    "lower_target",
+    "open_grip",
+    "retract",
+    "settle",
+    "stop_and_hover_source",
+    "turn_toward_target",
+    "walk_forward_to_source"
+  ],
+  "max_action_xyz_m": 0.08165556780992533,
+  "mean_action_xyz_m": 0.007685966880714219,
+  "grip_closed_steps": 342,
+  "walk_nonzero_steps": 238,
+  "reach_active_steps": 476,
+  "ever_attached": false,
+  "scenario_id": "",
+  "seed": null,
+  "red_block_xy_offset_m": [
+    0.0,
+    0.0
+  ]
+}
