@@ -1,0 +1,41 @@
+{
+  "num_records": 2665,
+  "first_phase": "SETTLE",
+  "last_phase": "RETRACT",
+  "unique_phases": [
+    "APPROACH_SOURCE",
+    "APPROACH_TARGET",
+    "CLOSE_GRIP",
+    "DESCEND_SOURCE",
+    "HOVER_SOURCE",
+    "HOVER_TARGET",
+    "LIFT_SOURCE",
+    "LOWER_TARGET",
+    "OPEN_GRIP",
+    "RETRACT",
+    "SETTLE"
+  ],
+  "walk_nonzero_records": 1276,
+  "reach_active_records": 2430,
+  "grip_closed_records": 1902,
+  "mean_walk_cmd_magnitude": 0.2647044983945314,
+  "max_walk_cmd_magnitude": 1.0071742649611337,
+  "mean_reach_target_norm": 0.3783422195480008,
+  "max_reach_target_norm": 0.41231056256176607,
+  "source_metadata": "data/vla_demos/demo_002_every_tick/demo.jsonl",
+  "dataset_path": "data/vla_exports/g1_native_demo_002_copied/dataset.jsonl",
+  "copied_images": true,
+  "include_phase": true,
+  "drop_done": true,
+  "drop_inactive_reach": false,
+  "action_vector": [
+    "walk_x",
+    "walk_y",
+    "walk_yaw",
+    "reach_x",
+    "reach_y",
+    "reach_z",
+    "reach_active",
+    "grip_closed"
+  ]
+}

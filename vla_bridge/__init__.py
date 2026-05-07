@@ -25,6 +25,18 @@ from vla_bridge.replay_metrics import (
     palm_error_metrics,
     walk_command_magnitudes,
 )
+from vla_bridge.g1_native_dataset import (
+    G1NativeVLARecord,
+    copy_images_for_records,
+    dataset_summary,
+    export_records_from_steps,
+    make_action_vector,
+    read_dataset_jsonl,
+    record_from_demo_step,
+    record_from_json,
+    record_to_json,
+    write_dataset_jsonl,
+)
 
 __all__ = [
     # Step 13 — action adapter
@@ -50,4 +62,15 @@ __all__ = [
     "palm_error_metrics",
     # Step 16 — walk command metrics
     "walk_command_magnitudes",
+    # Step 17 — G1-native dataset
+    "G1NativeVLARecord",
+    "copy_images_for_records",
+    "dataset_summary",
+    "export_records_from_steps",
+    "make_action_vector",
+    "read_dataset_jsonl",
+    "record_from_demo_step",
+    "record_from_json",
+    "record_to_json",
+    "write_dataset_jsonl",
 ]

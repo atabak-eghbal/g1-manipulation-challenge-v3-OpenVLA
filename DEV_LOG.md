@@ -827,3 +827,68 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
   - `scripts/inspect_vla_demo.py` — prints walk_nonzero_steps and reach_active_steps
   - `scripts/plot_vla_demo.py` — added walk_command_magnitude.png plot
   - `DEV_LOG.md` — appended this entry
+
+---
+
+## [2026-05-06] Step 17: G1-Native VLA Dataset Exporter
+
+- **Goal / Hypothesis:** Export a model-ready supervised dataset using the G1-native command interface that Step 16 proved executable. The hypothesis is that future learned-policy work should target `walk_cmd`, `reach_target_pelvis`, `reach_active`, and `grip_closed` rather than raw relative 7D palm deltas.
+
+- **Reasoning:** Step 16 showed that every-tick `teacher-command` replay achieved 0.0 m mean/max/final palm error and successful attachment, while `hybrid-7d` replay still failed with significant palm drift and no attachment. This means the first learned VLA-style target should be the G1-native command interface.
+
+- **Files Changed:**
+  - `vla_bridge/g1_native_dataset.py` — pure dataset schema/export helpers
+  - `scripts/export_g1_native_vla_dataset.py` — CLI exporter from demo JSONL to supervised dataset JSONL
+  - `scripts/inspect_g1_native_vla_dataset.py` — inspection CLI for exported datasets
+  - `tests/test_g1_native_dataset.py` — pure unit tests for exporter/schema behavior
+  - `vla_bridge/__init__.py` — exports new dataset helpers
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands to Run:**
+
+  ```bash
+  python -m unittest tests/test_g1_native_dataset.py
+  python -m unittest tests/test_vla_demo_schema.py
+  python -m unittest tests/test_vla_replay_metrics.py
+  python -m unittest tests/test_vla_action_adapter.py
+  python scripts/smoke_env.py
+  ```
+
+  Export the dataset:
+  ```bash
+  export PYTHONPATH=$PYTHONPATH:.
+  python scripts/export_g1_native_vla_dataset.py \
+    data/vla_demos/demo_002_every_tick/demo.jsonl \
+    --output-dir data/vla_exports/g1_native_demo_002
+  ```
+
+  Inspect the dataset:
+  ```bash
+  python scripts/inspect_g1_native_vla_dataset.py \
+    data/vla_exports/g1_native_demo_002/dataset.jsonl
+  ```
+
+  Optional copy-images export:
+  ```bash
+  python scripts/export_g1_native_vla_dataset.py \
+    data/vla_demos/demo_002_every_tick/demo.jsonl \
+    --output-dir data/vla_exports/g1_native_demo_002_copied \
+    --copy-images
+  ```
+
+- **Expected Result:** The exporter writes `dataset.jsonl` and `summary.json`. Each record contains an image path, instruction, optional phase, and an 8D G1-native action vector: `[walk_x, walk_y, walk_yaw, reach_x, reach_y, reach_z, reach_active, grip_closed]`.
+
+- **Architecture Decision:** The exported action target is G1-native rather than raw OpenVLA-style 7D deltas. This preserves the command interface that the existing controller can replay faithfully.
+
+- **Verification Evidence:**
+  - All dataset unit tests pass.
+  - Previous VLA tests still pass.
+  - The exporter creates a non-empty `dataset.jsonl`.
+  - `summary.json` reports sensible counts.
+  - Inspection shows `action_vector_shape = (N, 8)`.
+  - Records include image paths and instructions.
+  - No OpenVLA/Hugging Face/PyTorch dependency is introduced.
+
+- **Pass / Fail:** Pass.
+
+- **Next Risk:** The dataset may be highly imbalanced across phases, with many repeated carry or reach-active states. A future Step 18 should analyze class/phase balance and create train/validation splits before any model inference or fine-tuning.
