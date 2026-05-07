@@ -1,0 +1,36 @@
+{
+  "train_records": 2130,
+  "val_records": 535,
+  "total_records": 2665,
+  "val_fraction_actual": 0.20075046904315197,
+  "train_phase_counts": {
+    "APPROACH_SOURCE": 67,
+    "APPROACH_TARGET": 960,
+    "CLOSE_GRIP": 1,
+    "DESCEND_SOURCE": 240,
+    "HOVER_SOURCE": 21,
+    "HOVER_TARGET": 160,
+    "LIFT_SOURCE": 160,
+    "LOWER_TARGET": 240,
+    "OPEN_GRIP": 1,
+    "RETRACT": 160,
+    "SETTLE": 120
+  },
+  "val_phase_counts": {
+    "APPROACH_SOURCE": 17,
+    "APPROACH_TARGET": 240,
+    "CLOSE_GRIP": 1,
+    "DESCEND_SOURCE": 60,
+    "HOVER_SOURCE": 6,
+    "HOVER_TARGET": 40,
+    "LIFT_SOURCE": 40,
+    "LOWER_TARGET": 60,
+    "OPEN_GRIP": 1,
+    "RETRACT": 40,
+    "SETTLE": 30
+  },
+  "split_strategy": "phase_temporal_tail",
+  "warning": "Single-trajectory split for debugging only; not a robust generalization estimate.",
+  "train_path": "data/vla_exports/g1_native_demo_002/audit/train.jsonl",
+  "val_path": "data/vla_exports/g1_native_demo_002/audit/val.jsonl"
+}

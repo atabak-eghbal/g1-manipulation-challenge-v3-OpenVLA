@@ -892,3 +892,42 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass.
 
 - **Next Risk:** The dataset may be highly imbalanced across phases, with many repeated carry or reach-active states. A future Step 18 should analyze class/phase balance and create train/validation splits before any model inference or fine-tuning.
+
+---
+
+## [2026-05-06] Step 18: Dataset Audit + Train/Validation Split
+
+- **Goal / Hypothesis:** Audit the G1-native VLA dataset exported in Step 17 before attempting OpenVLA shadow inference or fine-tuning. The hypothesis is that data quality, phase balance, and split design should be validated before any model work.
+
+- **Reasoning:** Step 17 produced a clean supervised dataset with 2665 records and an 8D G1-native action vector. The next risk is not replay fidelity but dataset quality: phase imbalance, idle-heavy runs, action range issues, grip/reach imbalance, and misleading validation splits from a single trajectory.
+
+- **Files Changed:**
+  - `vla_bridge/dataset_audit.py` — pure audit and split helpers
+  - `scripts/audit_g1_native_vla_dataset.py` — CLI audit/split tool
+  - `tests/test_g1_native_dataset_audit.py` — unit tests for audit logic
+  - `vla_bridge/__init__.py` — exports audit helpers
+  - `DEV_LOG.md` — appended this entry
+
+- **Commands to Run:**
+
+  ```bash
+  python -m unittest tests/test_g1_native_dataset_audit.py
+  python scripts/audit_g1_native_vla_dataset.py \
+    data/vla_exports/g1_native_demo_002/dataset.jsonl \
+    --output-dir data/vla_exports/g1_native_demo_002/audit
+  ```
+
+- **Expected Result:** The auditor generates `audit_report.json` containing phase counts, action statistics, and warnings. The splitter generates `train.jsonl`, `val.jsonl`, and `split_summary.json` using a phase-aware temporal tail split.
+
+- **Architecture Decision:** We use a phase-aware temporal split (taking the end of each phase for validation) to ensure validation coverage across all task stages while avoiding the "future leakage" of row-level random shuffling in time-series data.
+
+- **Verification Evidence:**
+  - `test_g1_native_dataset_audit.py` passes 11 unit tests.
+  - Audit script identifies 11 phases in `demo_002`.
+  - Audit script flags 1 idle-heavy run (the initial `SETTLE` phase).
+  - Split generates 2130 train and 535 validation records (~20% split).
+  - Validation split correctly contains samples from all phases.
+
+- **Pass / Fail:** Pass.
+
+- **Next Risk:** Even with a clean dataset, the current single-trajectory data is insufficient for generalization. Future steps should focus on collecting diverse demonstrations and then establishing a shadow inference baseline (running OpenVLA in parallel with the FSM) to measure "prediction error" without taking control.

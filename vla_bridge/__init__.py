@@ -37,6 +37,20 @@ from vla_bridge.g1_native_dataset import (
     record_to_json,
     write_dataset_jsonl,
 )
+from vla_bridge.dataset_audit import (
+    ACTION_NAMES,
+    action_array,
+    action_statistics,
+    boolean_balance,
+    build_audit_report,
+    find_idle_runs,
+    magnitude_statistics,
+    phase_counts,
+    phase_temporal_split,
+    phase_transition_counts,
+    write_audit_report,
+    write_split_manifests,
+)
 
 __all__ = [
     # Step 13 — action adapter
@@ -73,4 +87,17 @@ __all__ = [
     "record_from_json",
     "record_to_json",
     "write_dataset_jsonl",
+    # Step 18 — dataset audit
+    "ACTION_NAMES",
+    "action_array",
+    "action_statistics",
+    "boolean_balance",
+    "build_audit_report",
+    "find_idle_runs",
+    "magnitude_statistics",
+    "phase_counts",
+    "phase_temporal_split",
+    "phase_transition_counts",
+    "write_audit_report",
+    "write_split_manifests",
 ]
