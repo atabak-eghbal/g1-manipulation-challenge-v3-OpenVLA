@@ -20,6 +20,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 import mujoco
 import numpy as np
@@ -95,6 +96,7 @@ def summarize_demo(recorder: VLADemoRecorder, done_reached: bool) -> dict:
     phases = [s.phase for s in steps]
     return {
         "num_steps": len(steps),
+        "num_frames": int(sum(1 for s in steps if s.image_path)),
         "done_reached": bool(done_reached),
         "first_phase": phases[0],
         "last_phase": phases[-1],
@@ -105,6 +107,56 @@ def summarize_demo(recorder: VLADemoRecorder, done_reached: bool) -> dict:
         "walk_nonzero_steps": int(sum(np.linalg.norm(s.walk_cmd) > 1e-9 for s in steps)),
         "reach_active_steps": int(sum(s.reach_active for s in steps)),
     }
+
+
+def apply_red_block_xy_offset(model, data, dx: float, dy: float) -> dict[str, Any]:
+    """Apply a small x/y offset to the red_block freejoint qpos.
+
+    Returns metadata with before/after positions.
+    """
+    body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "red_block")
+    if body_id < 0:
+        raise RuntimeError("red_block body not found")
+
+    joint_id = int(model.body_jntadr[body_id])
+    if joint_id < 0:
+        raise RuntimeError("red_block has no joint to perturb")
+
+    qposadr = int(model.jnt_qposadr[joint_id])
+
+    before = data.qpos[qposadr:qposadr + 3].copy()
+    data.qpos[qposadr + 0] += float(dx)
+    data.qpos[qposadr + 1] += float(dy)
+    mujoco.mj_forward(model, data)
+    after = data.qpos[qposadr:qposadr + 3].copy()
+
+    return {
+        "red_block_body_id": int(body_id),
+        "red_block_qposadr": int(qposadr),
+        "red_block_pos_before": [float(x) for x in before],
+        "red_block_pos_after": [float(x) for x in after],
+        "red_block_xy_offset_m": [float(dx), float(dy)],
+    }
+
+
+def _augment_demo_rows_with_scenario(
+    metadata_path: Path,
+    *,
+    scenario_id: str,
+    seed: int | None,
+    scenario: dict[str, Any],
+) -> None:
+    lines = metadata_path.read_text(encoding="utf-8").splitlines()
+    out_lines = []
+    for line in lines:
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        row["scenario_id"] = str(scenario_id)
+        row["seed"] = seed
+        row["scenario"] = dict(scenario)
+        out_lines.append(json.dumps(row, separators=(",", ":")))
+    metadata_path.write_text("\n".join(out_lines) + ("\n" if out_lines else ""), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -153,6 +205,16 @@ def main() -> int:
         default=100,
         help="Continue recording this many ticks after FSM reaches DONE",
     )
+    parser.add_argument("--scenario-id", default="", help="Scenario identifier stored in demo metadata.")
+    parser.add_argument("--seed", type=int, default=None, help="Scenario seed stored in demo metadata.")
+    parser.add_argument(
+        "--red-block-xy-offset",
+        nargs=2,
+        type=float,
+        default=(0.0, 0.0),
+        metavar=("DX", "DY"),
+        help="Small x/y offset in meters applied to the red_block initial pose before recording.",
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -168,6 +230,11 @@ def main() -> int:
     _set_armature(model, joint_names)
     data = mujoco.MjData(model)
     reset_robot(model, data, config, joint_names, reset_data=True)
+    red_offset_dx, red_offset_dy = float(args.red_block_xy_offset[0]), float(args.red_block_xy_offset[1])
+    scenario = {
+        "red_block_xy_offset_m": [red_offset_dx, red_offset_dy],
+    }
+    scenario.update(apply_red_block_xy_offset(model, data, red_offset_dx, red_offset_dy))
 
     # --- Load ONNX policies ---
     walker = ONNXPolicy(str(ROOT / "walker.onnx"))
@@ -276,10 +343,20 @@ def main() -> int:
     recorder.finalize()
 
     summary = summarize_demo(recorder, done_reached)
+    summary["scenario_id"] = str(args.scenario_id)
+    summary["seed"] = args.seed
+    summary["scenario"] = dict(scenario)
+    summary["red_block_xy_offset_m"] = [red_offset_dx, red_offset_dy]
     summary_path = output_dir / "summary.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     with open(summary_path, "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
+    _augment_demo_rows_with_scenario(
+        recorder.metadata_path,
+        scenario_id=str(args.scenario_id),
+        seed=args.seed,
+        scenario=scenario,
+    )
 
     print("\n--- VLA Demo Recording Summary ---")
     print(f"  output_dir    : {output_dir.resolve()}")
@@ -298,6 +375,9 @@ def main() -> int:
         print(f"  walk_nonzero  : {summary['walk_nonzero_steps']}")
         print(f"  reach_active  : {summary['reach_active_steps']}")
     print(f"  done_reached  : {done_reached}")
+    print(f"  scenario_id   : {args.scenario_id}")
+    print(f"  seed          : {args.seed}")
+    print(f"  red_offset_m  : {[red_offset_dx, red_offset_dy]}")
 
     if not recorder.steps:
         print("[record_vla_demo] ERROR: no steps were recorded.")

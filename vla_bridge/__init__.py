@@ -84,6 +84,14 @@ from vla_bridge.batch_dataset_export import (
     load_demo_records,
     select_successful_demos,
 )
+from vla_bridge.scenario_config import (
+    ScenarioConfig,
+    ScenarioSpec,
+    load_scenario_config,
+    scenario_to_metadata,
+    select_scenario,
+)
+from vla_bridge.batch_diversity import summarize_manifest_diversity
 
 __all__ = [
     # Step 13 — action adapter
@@ -163,4 +171,11 @@ __all__ = [
     "export_combined_batch_dataset",
     "load_demo_records",
     "select_successful_demos",
+    # Step 22 — scenario perturbations and diversity
+    "ScenarioSpec",
+    "ScenarioConfig",
+    "load_scenario_config",
+    "select_scenario",
+    "scenario_to_metadata",
+    "summarize_manifest_diversity",
 ]

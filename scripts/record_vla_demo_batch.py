@@ -28,6 +28,7 @@ from vla_bridge.batch_manifest import (
     manifest_summary,
     write_batch_manifest,
 )
+from vla_bridge.scenario_config import ScenarioSpec, load_scenario_config, scenario_to_metadata, select_scenario
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,6 +43,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--python", type=str, default=sys.executable)
     parser.add_argument("--batch-id", type=str, default="")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--scenario-config",
+        type=Path,
+        default=None,
+        help="Optional JSON config of deterministic scenario perturbations.",
+    )
     return parser.parse_args()
 
 
@@ -59,7 +66,7 @@ def _recorder_supports_max_ticks() -> bool:
     return "--max-control-ticks" in text
 
 
-def _build_record_command(args: argparse.Namespace, demo_dir: Path) -> list[str]:
+def _build_record_command(args: argparse.Namespace, demo_dir: Path, scenario: ScenarioSpec | None = None) -> list[str]:
     cmd = [
         args.python,
         str(REPO_ROOT / "scripts" / "record_vla_demo.py"),
@@ -76,6 +83,16 @@ def _build_record_command(args: argparse.Namespace, demo_dir: Path) -> list[str]
         cmd.append("--no-images")
     else:
         cmd.extend(["--camera", args.camera])
+    if scenario is not None:
+        cmd.extend(["--scenario-id", scenario.scenario_id])
+        cmd.extend(["--seed", str(int(scenario.seed))])
+        cmd.extend(
+            [
+                "--red-block-xy-offset",
+                str(float(scenario.red_block_xy_offset_m[0])),
+                str(float(scenario.red_block_xy_offset_m[1])),
+            ]
+        )
 
     return cmd
 
@@ -95,13 +112,17 @@ def main() -> int:
     manifest_path = args.output_root / "batch_manifest.json"
 
     demo_records = []
+    scenario_config = None
+    if args.scenario_config is not None:
+        scenario_config = load_scenario_config(args.scenario_config)
 
     if args.dry_run:
         print("\n--- G1 VLA Batch Recorder Dry Run ---")
         for i in range(args.num_demos):
             demo_id = make_demo_id(i)
             demo_dir = args.output_root / demo_id
-            cmd = _build_record_command(args, demo_dir)
+            scenario = select_scenario(scenario_config, i) if scenario_config is not None else None
+            cmd = _build_record_command(args, demo_dir, scenario)
             print(" ".join(cmd))
 
         manifest = build_batch_manifest(
@@ -113,6 +134,9 @@ def main() -> int:
             no_images=args.no_images,
             max_ticks=args.max_ticks,
             demos=[],
+            scenario_config_path=str(args.scenario_config or ""),
+            scenario_config_name=scenario_config.name if scenario_config is not None else "",
+            scenario_count=len(scenario_config.scenarios) if scenario_config is not None else 0,
         )
         write_batch_manifest(manifest_path, manifest)
         print(f"\n[record_vla_demo_batch] wrote dry-run manifest: {manifest_path}")
@@ -122,7 +146,8 @@ def main() -> int:
         demo_id = make_demo_id(i)
         demo_dir = args.output_root / demo_id
         demo_dir.mkdir(parents=True, exist_ok=True)
-        cmd = _build_record_command(args, demo_dir)
+        scenario = select_scenario(scenario_config, i) if scenario_config is not None else None
+        cmd = _build_record_command(args, demo_dir, scenario)
 
         print("\n============================================================")
         print(f"[record_vla_demo_batch] Recording {demo_id} ({i + 1}/{args.num_demos})")
@@ -137,6 +162,9 @@ def main() -> int:
                 demo_id=demo_id,
                 output_dir=demo_dir,
                 summary=summary,
+                scenario_id=scenario.scenario_id if scenario is not None else "",
+                seed=scenario.seed if scenario is not None else None,
+                scenario=scenario_to_metadata(scenario) if scenario is not None else None,
             )
             demo_records.append(record)
         except Exception as exc:
@@ -144,6 +172,9 @@ def main() -> int:
                 demo_id=demo_id,
                 output_dir=demo_dir,
                 error=repr(exc),
+                scenario_id=scenario.scenario_id if scenario is not None else "",
+                seed=scenario.seed if scenario is not None else None,
+                scenario=scenario_to_metadata(scenario) if scenario is not None else None,
             )
             demo_records.append(record)
             print(f"[record_vla_demo_batch] ERROR in {demo_id}: {exc}")
@@ -160,6 +191,9 @@ def main() -> int:
         no_images=args.no_images,
         max_ticks=args.max_ticks,
         demos=demo_records,
+        scenario_config_path=str(args.scenario_config or ""),
+        scenario_config_name=scenario_config.name if scenario_config is not None else "",
+        scenario_count=len(scenario_config.scenarios) if scenario_config is not None else 0,
     )
     write_batch_manifest(manifest_path, manifest)
     summary = manifest_summary(manifest)
