@@ -1059,3 +1059,99 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass.
 
 - **Next Risk:** If the batch demos are deterministic, the combined dataset will be larger but not more diverse. The next step should add deterministic scenario perturbations (e.g., varying object initial positions) to create truly diverse data for learning.
+
+---
+
+## [2026-05-07] Step 22: Scenario Perturbations / Multi-Seed Demo Diversity
+
+- **Goal / Hypothesis:** Add controlled scenario perturbations so batch demos are no longer deterministic duplicates. The hypothesis is that small source-cylinder pose offsets can create measurable data diversity while preserving the existing FSM teacher success path.
+
+- **Reasoning:** Step 21 proved the batch-to-dataset pipeline, but the combined dataset was still built from deterministic repeated demos. Before attempting OpenVLA shadow inference or fine-tuning, the dataset needs controlled variation and provenance.
+
+- **Files Changed:**
+  - `configs/scenarios/small_perturbations.json` — deterministic perturbation spec
+  - `vla_bridge/scenario_config.py` — scenario config parsing/validation
+  - `vla_bridge/batch_diversity.py` — batch diversity summary helpers, if added
+  - `scripts/inspect_vla_batch_diversity.py` — CLI for manifest diversity inspection
+  - `scripts/record_vla_demo.py` — scenario metadata + red_block x/y offset hook
+  - `scripts/record_vla_demo_batch.py` — scenario-config support
+  - `vla_bridge/batch_manifest.py` — scenario metadata fields in manifest records
+  - `vla_bridge/batch_dataset_export.py` — preserve scenario metadata in combined datasets
+  - `tests/test_scenario_config.py`
+  - `tests/test_batch_diversity_manifest.py`
+  - `vla_bridge/__init__.py`
+  - `DEV_LOG.md`
+
+- **New Scenario Contract:**
+  Each demo can now carry:
+  - `scenario_id`
+  - `seed`
+  - `scenario.red_block_xy_offset_m`
+  - optional future fields for robot/base/target perturbations
+
+- **MVP Perturbation:**
+  Apply only small red cylinder x/y offsets first:
+  - nominal
+  - +2 cm x
+  - -2 cm x
+  - +2 cm y
+  - -2 cm y
+
+- **Commands to Run:**
+
+  ```bash
+  python -m unittest tests/test_scenario_config.py
+  python -m unittest tests/test_batch_diversity_manifest.py
+  python -m unittest tests/test_g1_native_batch_dataset_export.py
+  python -m unittest tests/test_vla_batch_manifest.py
+  python -m unittest tests/test_g1_native_training_views.py
+  python -m unittest tests/test_g1_native_dataset_audit.py
+  python -m unittest tests/test_g1_native_dataset.py
+  python -m unittest tests/test_vla_demo_schema.py
+  python -m unittest tests/test_vla_replay_metrics.py
+  python -m unittest tests/test_vla_action_adapter.py
+  python scripts/smoke_env.py
+Dry-run scenario batch:
+python scripts/record_vla_demo_batch.py \
+  --output-root data/vla_demos/batch_001_perturbed_dryrun \
+  --num-demos 5 \
+  --record-every 1 \
+  --no-images \
+  --scenario-config configs/scenarios/small_perturbations.json \
+  --dry-run
+Real no-image scenario batch:
+python scripts/record_vla_demo_batch.py \
+  --output-root data/vla_demos/batch_001_perturbed_no_images \
+  --num-demos 5 \
+  --record-every 1 \
+  --no-images \
+  --scenario-config configs/scenarios/small_perturbations.json \
+  --continue-on-fail
+Inspect diversity:
+python scripts/inspect_vla_batch_diversity.py \
+  data/vla_demos/batch_001_perturbed_no_images/batch_manifest.json
+Combine perturbed batch:
+python scripts/export_g1_native_vla_batch_dataset.py \
+  data/vla_demos/batch_001_perturbed_no_images/batch_manifest.json \
+  --output-dir data/vla_exports/batch_001_perturbed_g1_native
+Audit and training views:
+python scripts/audit_g1_native_vla_dataset.py \
+  data/vla_exports/batch_001_perturbed_g1_native/dataset.jsonl \
+  --output-dir data/vla_exports/batch_001_perturbed_g1_native/audit
+
+python scripts/build_g1_native_training_views.py \
+  data/vla_exports/batch_001_perturbed_g1_native/dataset.jsonl \
+  --output-dir data/vla_exports/batch_001_perturbed_g1_native/training_views
+Expected Result: Batch manifest should report multiple unique scenario IDs and non-identical red cylinder offsets. Successful demos should remain exportable into one combined G1-native dataset. Combined rows should preserve scenario_id, seed, and scenario metadata.
+Architecture Decision: Start with small deterministic cylinder perturbations only. This keeps the perturbation surface narrow and makes failures easy to attribute.
+Verification Evidence: Step 22 is complete when:
+scenario config tests pass,
+manifest round-trip tests pass,
+old Step 13–21 tests still pass,
+dry-run commands include scenario flags,
+real no-image batch records scenario metadata,
+diversity inspector reports more than one unique scenario,
+combined dataset preserves scenario metadata,
+audit/training-view tools still run on the perturbed combined dataset.
+Pass / Fail: Pending.
+Next Risk: Even small perturbations may break FSM success if source approach thresholds are too tight. If success drops, reduce offsets from 2 cm to 1 cm or start with x-only perturbations.

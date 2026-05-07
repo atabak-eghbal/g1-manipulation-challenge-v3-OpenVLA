@@ -75,6 +75,17 @@ def load_demo_records(metadata_path: str | Path) -> list[Any]:
     return read_jsonl(metadata_path)
 
 
+def _load_demo_rows_json(metadata_path: str | Path) -> list[dict[str, Any]]:
+    src = Path(metadata_path)
+    rows: list[dict[str, Any]] = []
+    with src.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
 def _prefix_image_path(
     image_path: str,
     *,
@@ -119,6 +130,8 @@ def export_combined_batch_dataset(
 
     combined: list[dict[str, Any]] = []
     records_per_demo = {}
+    records_per_scenario: dict[str, int] = {}
+    unique_scenario_ids: set[str] = set()
 
     global_index = 0
     demo_lookup = {d.demo_id: d for d in manifest.demos}
@@ -128,6 +141,11 @@ def export_combined_batch_dataset(
         
         # Load raw demo steps
         steps = load_demo_records(metadata_path)
+        source_rows = _load_demo_rows_json(metadata_path)
+        source_by_step_index = {
+            int(row.get("step_index", i)): row
+            for i, row in enumerate(source_rows)
+        }
         
         # Convert to G1-native records using existing logic
         native_records = export_records_from_steps(
@@ -152,6 +170,17 @@ def export_combined_batch_dataset(
                 demo_output_dir=demo_record.output_dir,
                 batch_root=manifest.output_root,
             )
+            source_row = source_by_step_index.get(int(getattr(rec, "source_step_index", -1)), {})
+            scenario_id = source_row.get("scenario_id", demo_record.scenario_id or "")
+            seed = source_row.get("seed", demo_record.seed)
+            scenario_meta = source_row.get("scenario", demo_record.scenario if demo_record.scenario is not None else {})
+            if scenario_meta is None:
+                scenario_meta = {}
+            row["scenario_id"] = str(scenario_id)
+            row["seed"] = seed
+            row["scenario"] = scenario_meta
+            records_per_scenario[row["scenario_id"]] = records_per_scenario.get(row["scenario_id"], 0) + 1
+            unique_scenario_ids.add(row["scenario_id"])
             combined.append(row)
             global_index += 1
 
@@ -199,6 +228,9 @@ def export_combined_batch_dataset(
         "skipped_demo_ids": selection.skipped_demo_ids,
         "skip_reasons": selection.skip_reasons,
         "records_per_demo": records_per_demo,
+        "scenario_ids": sorted(unique_scenario_ids),
+        "num_unique_scenarios": len(unique_scenario_ids),
+        "records_per_scenario": records_per_scenario,
         "include_phase": include_phase,
         "drop_done": drop_done,
         "drop_inactive_reach": drop_inactive_reach,

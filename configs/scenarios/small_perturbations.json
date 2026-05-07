@@ -1,0 +1,36 @@
+{
+  "name": "small_perturbations_v1",
+  "description": "Small deterministic source-cylinder pose offsets for Step 22 batch diversity validation.",
+  "defaults": {
+    "red_block_xy_offset_m": [0.0, 0.0],
+    "robot_base_xy_offset_m": [0.0, 0.0],
+    "target_drop_xy_offset_m": [0.0, 0.0]
+  },
+  "scenarios": [
+    {
+      "scenario_id": "nominal",
+      "seed": 0,
+      "red_block_xy_offset_m": [0.0, 0.0]
+    },
+    {
+      "scenario_id": "cyl_x_plus_02",
+      "seed": 101,
+      "red_block_xy_offset_m": [0.02, 0.0]
+    },
+    {
+      "scenario_id": "cyl_x_minus_02",
+      "seed": 102,
+      "red_block_xy_offset_m": [-0.02, 0.0]
+    },
+    {
+      "scenario_id": "cyl_y_plus_02",
+      "seed": 103,
+      "red_block_xy_offset_m": [0.0, 0.02]
+    },
+    {
+      "scenario_id": "cyl_y_minus_02",
+      "seed": 104,
+      "red_block_xy_offset_m": [0.0, -0.02]
+    }
+  ]
+}

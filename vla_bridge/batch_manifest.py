@@ -32,6 +32,9 @@ class DemoRunRecord:
     num_steps: int
     num_frames: int
     error: str = ""
+    scenario_id: str = ""
+    seed: int | None = None
+    scenario: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -48,6 +51,9 @@ class BatchManifest:
     no_images: bool
     max_ticks: int
     demos: list[DemoRunRecord]
+    scenario_config_path: str = ""
+    scenario_config_name: str = ""
+    scenario_count: int = 0
 
 
 def make_demo_id(index: int) -> str:
@@ -64,6 +70,9 @@ def demo_record_from_summary(
     summary: dict[str, Any],
     status: str = STATUS_SUCCESS,
     error: str = "",
+    scenario_id: str = "",
+    seed: int | None = None,
+    scenario: dict[str, Any] | None = None,
 ) -> DemoRunRecord:
     """Build a DemoRunRecord from a recording summary."""
     out = Path(output_dir)
@@ -77,6 +86,9 @@ def demo_record_from_summary(
         num_steps=int(summary.get("num_steps", 0)),
         num_frames=int(summary.get("num_frames", 0)),
         error=str(error),
+        scenario_id=str(scenario_id or summary.get("scenario_id", "")),
+        seed=seed if seed is not None else summary.get("seed"),
+        scenario=scenario if scenario is not None else summary.get("scenario"),
     )
 
 
@@ -85,6 +97,9 @@ def failed_demo_record(
     demo_id: str,
     output_dir: str | Path,
     error: str,
+    scenario_id: str = "",
+    seed: int | None = None,
+    scenario: dict[str, Any] | None = None,
 ) -> DemoRunRecord:
     """Build a DemoRunRecord for a failed recording attempt."""
     out = Path(output_dir)
@@ -98,6 +113,9 @@ def failed_demo_record(
         num_steps=0,
         num_frames=0,
         error=str(error),
+        scenario_id=str(scenario_id),
+        seed=seed,
+        scenario=scenario,
     )
 
 
@@ -112,6 +130,9 @@ def build_batch_manifest(
     max_ticks: int,
     demos: list[DemoRunRecord],
     created_unix_time: float | None = None,
+    scenario_config_path: str = "",
+    scenario_config_name: str = "",
+    scenario_count: int = 0,
 ) -> BatchManifest:
     """Aggregate demo records into a batch manifest."""
     num_completed = sum(1 for d in demos if d.status == STATUS_SUCCESS)
@@ -128,6 +149,9 @@ def build_batch_manifest(
         no_images=bool(no_images),
         max_ticks=int(max_ticks),
         demos=list(demos),
+        scenario_config_path=str(scenario_config_path),
+        scenario_config_name=str(scenario_config_name),
+        scenario_count=int(scenario_count),
     )
 
 
@@ -147,9 +171,18 @@ def read_batch_manifest(path: str | Path) -> BatchManifest:
     """Read manifest from JSON."""
     src = Path(path)
     data = json.loads(src.read_text(encoding="utf-8"))
-    demos = [DemoRunRecord(**row) for row in data.get("demos", [])]
+    demos = []
+    for row in data.get("demos", []):
+        row = dict(row)
+        row.setdefault("scenario_id", "")
+        row.setdefault("seed", None)
+        row.setdefault("scenario", None)
+        demos.append(DemoRunRecord(**row))
     data = dict(data)
     data["demos"] = demos
+    data.setdefault("scenario_config_path", "")
+    data.setdefault("scenario_config_name", "")
+    data.setdefault("scenario_count", 0)
     return BatchManifest(**data)
 
 
