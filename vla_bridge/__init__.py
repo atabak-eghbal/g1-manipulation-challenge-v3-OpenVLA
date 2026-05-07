@@ -78,6 +78,12 @@ from vla_bridge.batch_manifest import (
     successful_demo_paths,
     write_batch_manifest,
 )
+from vla_bridge.batch_dataset_export import (
+    BatchExportSelection,
+    export_combined_batch_dataset,
+    load_demo_records,
+    select_successful_demos,
+)
 
 __all__ = [
     # Step 13 — action adapter
@@ -152,4 +158,9 @@ __all__ = [
     "read_batch_manifest",
     "successful_demo_paths",
     "write_batch_manifest",
+    # Step 21 — batch dataset export
+    "BatchExportSelection",
+    "export_combined_batch_dataset",
+    "load_demo_records",
+    "select_successful_demos",
 ]

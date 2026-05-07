@@ -1013,3 +1013,49 @@ Added `if self._tbl_white_id >= 0:` guard before the body-centre fallback, and r
 - **Pass / Fail:** Pass.
 
 - **Next Risk:** After batch collection works, Step 21 should combine successful batch demos into a single G1-native dataset. However, because the current environment is deterministic, all demos in a batch are currently identical. Future work will need scene perturbations to create diverse data.
+
+---
+
+## [2026-05-06] Step 21: Combined Batch Dataset Exporter
+
+- **Goal / Hypothesis:** Convert a Step 20 batch manifest into one combined G1-native dataset. The hypothesis is that once multiple teacher demonstrations are collected, downstream audit/training-view tools should consume one dataset artifact instead of many per-demo JSONL files.
+
+- **Reasoning:** Step 20 validated batch collection and manifest tracking, but the demos still live in separate folders. Step 21 creates the bridge from batch collection to the existing Step 17–19 dataset pipeline by selecting successful demos and concatenating their G1-native records with provenance fields.
+
+- **Files Changed:**
+  - `vla_bridge/batch_dataset_export.py` — selection and combined export helpers
+  - `scripts/export_g1_native_vla_batch_dataset.py` — CLI for manifest-to-dataset export
+  - `tests/test_g1_native_batch_dataset_export.py` — unit tests for selection, provenance, and combined export
+  - `vla_bridge/__init__.py` — exports batch dataset helpers
+  - `DEV_LOG.md` — appended this entry
+
+- **New Dataset Contract:**
+  Combined rows preserve the Step 17 G1-native schema and add provenance:
+  - `batch_id`
+  - `demo_id`
+  - `demo_sample_index`
+  `sample_index` becomes the global index across the combined dataset.
+
+- **Commands to Run:**
+
+  ```bash
+  python -m unittest tests/test_g1_native_batch_dataset_export.py
+  python scripts/export_g1_native_vla_batch_dataset.py \
+    data/vla_demos/batch_000_no_images/batch_manifest.json \
+    --output-dir data/vla_exports/batch_000_no_images_g1_native
+  ```
+
+- **Expected Result:** The exporter reads `batch_manifest.json`, selects successful demos, combines their records, writes `dataset.jsonl`, `summary.json`, and `source_manifest.json`, and preserves per-row provenance.
+
+- **Architecture Decision:** Do not copy images in Step 21 by default. Instead, prefix relative image paths with the demo folder name. This keeps the exporter lightweight and avoids duplicating large frame directories.
+
+- **Verification Evidence:**
+  - `test_g1_native_batch_dataset_export.py` passes 6 unit tests.
+  - Exported 5330 records from 2 successful no-image batch demos.
+  - Rows correctly include `batch_id`, `demo_id`, and `demo_sample_index`.
+  - Global `sample_index` is contiguous across the combined dataset.
+  - Existing audit and training-view tools successfully processed the combined artifact.
+
+- **Pass / Fail:** Pass.
+
+- **Next Risk:** If the batch demos are deterministic, the combined dataset will be larger but not more diverse. The next step should add deterministic scenario perturbations (e.g., varying object initial positions) to create truly diverse data for learning.
