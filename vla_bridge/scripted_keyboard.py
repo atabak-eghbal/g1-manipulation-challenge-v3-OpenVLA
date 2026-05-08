@@ -4,6 +4,10 @@ Step 23 scope:
 - no MuJoCo
 - no OpenCV
 - pure plan parsing, validation, expansion, and summary
+
+Step 26 additions:
+- optional grip_fraction and grip_close_speed per step
+- plan_summary reports uses_continuous_grip, min/max grip_fraction
 """
 
 from __future__ import annotations
@@ -27,17 +31,27 @@ class ScriptedKeyboardStep:
     reach_target: tuple[float, float, float]
     reach_active: bool
     grip_closed: bool
+    grip_fraction: float | None = None      # continuous override [0, 1]; None = binary
+    grip_close_speed: float | None = None   # ramp speed override; None = keep current
 
 
 @dataclass(frozen=True)
 class ScriptedKeyboardPlan:
-    """A complete scripted keyboard plan."""
+    """A complete scripted keyboard plan.
+
+    reach_frame: "pelvis" (default) — reach_target values are already in pelvis
+                 frame and written to the controller as-is.
+                 "world" — reach_target values are world-frame coordinates;
+                 the recording/viewer code must convert to pelvis frame each tick
+                 using the robot's current pose.
+    """
 
     name: str
     teacher_type: str
     description: str
     control_dt: float
     steps: list[ScriptedKeyboardStep]
+    reach_frame: str = "pelvis"
 
 
 @dataclass(frozen=True)
@@ -50,13 +64,30 @@ class ExpandedScriptedCommand:
     reach_target: tuple[float, float, float]
     reach_active: bool
     grip_closed: bool
+    grip_fraction: float | None = None
+    grip_close_speed: float | None = None
+
+
+def _parse_step(raw: dict) -> ScriptedKeyboardStep:
+    """Build a ScriptedKeyboardStep, accepting optional new fields gracefully."""
+    known = {
+        "name", "duration_ticks", "walk_cmd", "reach_target",
+        "reach_active", "grip_closed", "grip_fraction", "grip_close_speed",
+    }
+    filtered = {k: v for k, v in raw.items() if k in known}
+    # Convert list reach_target/walk_cmd to tuple
+    if "walk_cmd" in filtered:
+        filtered["walk_cmd"] = tuple(filtered["walk_cmd"])
+    if "reach_target" in filtered:
+        filtered["reach_target"] = tuple(filtered["reach_target"])
+    return ScriptedKeyboardStep(**filtered)
 
 
 def load_scripted_keyboard_plan(path: str | Path) -> ScriptedKeyboardPlan:
     """Load a scripted keyboard plan from a JSON file."""
     src = Path(path)
     data = json.loads(src.read_text(encoding="utf-8"))
-    steps = [ScriptedKeyboardStep(**s) for s in data.pop("steps")]
+    steps = [_parse_step(s) for s in data.pop("steps")]
     return ScriptedKeyboardPlan(steps=steps, **data)
 
 
@@ -66,7 +97,9 @@ def validate_scripted_keyboard_plan(plan: ScriptedKeyboardPlan) -> None:
         raise ValueError("Plan must contain at least one step.")
     if plan.teacher_type != "scripted_keyboard":
         raise ValueError(f"Expected teacher_type 'scripted_keyboard', got '{plan.teacher_type}'")
-    
+    if plan.reach_frame not in ("pelvis", "world"):
+        raise ValueError(f"reach_frame must be 'pelvis' or 'world', got '{plan.reach_frame}'")
+
     for i, step in enumerate(plan.steps):
         if step.duration_ticks <= 0:
             raise ValueError(f"Step {i} ({step.name}) has non-positive duration_ticks: {step.duration_ticks}")
@@ -74,6 +107,16 @@ def validate_scripted_keyboard_plan(plan: ScriptedKeyboardPlan) -> None:
             raise ValueError(f"Step {i} ({step.name}) walk_cmd must be length 3, got {len(step.walk_cmd)}")
         if len(step.reach_target) != 3:
             raise ValueError(f"Step {i} ({step.name}) reach_target must be length 3, got {len(step.reach_target)}")
+        if step.grip_fraction is not None:
+            if not (0.0 <= float(step.grip_fraction) <= 1.0):
+                raise ValueError(
+                    f"Step {i} ({step.name}) grip_fraction={step.grip_fraction} is outside [0, 1]"
+                )
+        if step.grip_close_speed is not None:
+            if float(step.grip_close_speed) <= 0.0:
+                raise ValueError(
+                    f"Step {i} ({step.name}) grip_close_speed={step.grip_close_speed} must be positive"
+                )
 
 
 def expand_scripted_keyboard_plan(plan: ScriptedKeyboardPlan) -> list[ExpandedScriptedCommand]:
@@ -91,6 +134,8 @@ def expand_scripted_keyboard_plan(plan: ScriptedKeyboardPlan) -> list[ExpandedSc
                     reach_target=step.reach_target,
                     reach_active=step.reach_active,
                     grip_closed=step.grip_closed,
+                    grip_fraction=step.grip_fraction,
+                    grip_close_speed=step.grip_close_speed,
                 )
             )
             current_tick += 1
@@ -113,7 +158,7 @@ def plan_summary(plan: ScriptedKeyboardPlan) -> dict[str, Any]:
     """Return a summary of the scripted keyboard plan."""
     expanded = expand_scripted_keyboard_plan(plan)
     total_ticks = len(expanded)
-    
+
     if not expanded:
         return {
             "name": plan.name,
@@ -127,16 +172,25 @@ def plan_summary(plan: ScriptedKeyboardPlan) -> dict[str, Any]:
             "grip_closed_ticks": 0,
             "reach_active_ticks": 0,
             "walk_nonzero_ticks": 0,
+            "uses_continuous_grip": False,
+            "min_grip_fraction": None,
+            "max_grip_fraction": None,
             "warnings": ["Plan has no expanded commands."],
         }
 
     phases_counter = Counter(cmd.phase for cmd in expanded)
-    
+
     grip_closed_ticks = sum(1 for cmd in expanded if cmd.grip_closed)
     reach_active_ticks = sum(1 for cmd in expanded if cmd.reach_active)
     walk_nonzero_ticks = sum(
         1 for cmd in expanded if np.linalg.norm(cmd.walk_cmd) > 1e-9
     )
+
+    # Continuous grip stats
+    fractions = [cmd.grip_fraction for cmd in expanded if cmd.grip_fraction is not None]
+    uses_continuous_grip = len(fractions) > 0
+    min_grip_fraction: float | None = float(min(fractions)) if fractions else None
+    max_grip_fraction: float | None = float(max(fractions)) if fractions else None
 
     return {
         "name": plan.name,
@@ -150,5 +204,8 @@ def plan_summary(plan: ScriptedKeyboardPlan) -> dict[str, Any]:
         "grip_closed_ticks": grip_closed_ticks,
         "reach_active_ticks": reach_active_ticks,
         "walk_nonzero_ticks": walk_nonzero_ticks,
+        "uses_continuous_grip": uses_continuous_grip,
+        "min_grip_fraction": min_grip_fraction,
+        "max_grip_fraction": max_grip_fraction,
         "warnings": [],
     }

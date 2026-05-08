@@ -16,6 +16,7 @@ from vla_bridge.scripted_keyboard import (
 )
 
 NOMINAL_JSON_PATH = Path(__file__).resolve().parent.parent / "configs" / "scripts" / "nominal_scripted_keyboard_v1.json"
+CAGING_JSON_PATH  = Path(__file__).resolve().parent.parent / "configs" / "scripts" / "table_assisted_caging_v1.json"
 
 
 def _make_step(**overrides) -> ScriptedKeyboardStep:
@@ -188,6 +189,90 @@ class TestScriptedKeyboard(unittest.TestCase):
         self.assertEqual(plan.name, "rt_plan")
         self.assertEqual(len(plan.steps), 1)
         self.assertIsInstance(plan.steps[0], ScriptedKeyboardStep)
+
+
+    # ------------------------------------------------------------------
+    # Step 26 — continuous grip fraction tests
+    # ------------------------------------------------------------------
+
+    def test_nominal_plan_loads(self):
+        """Old nominal plan still loads and parses without errors."""
+        plan = load_scripted_keyboard_plan(NOMINAL_JSON_PATH)
+        validate_scripted_keyboard_plan(plan)
+        self.assertGreater(len(plan.steps), 0)
+
+    def test_caging_plan_loads(self):
+        """New caging plan loads and validates without errors."""
+        plan = load_scripted_keyboard_plan(CAGING_JSON_PATH)
+        validate_scripted_keyboard_plan(plan)
+        self.assertGreater(len(plan.steps), 0)
+
+    def test_caging_plan_uses_continuous_grip(self):
+        """Caging plan summary reports uses_continuous_grip=True."""
+        plan = load_scripted_keyboard_plan(CAGING_JSON_PATH)
+        summary = plan_summary(plan)
+        self.assertTrue(summary["uses_continuous_grip"])
+        self.assertIsNotNone(summary["min_grip_fraction"])
+        self.assertIsNotNone(summary["max_grip_fraction"])
+
+    def test_caging_plan_max_grip_fraction_gt_half(self):
+        """Caging plan max grip fraction is greater than 0.5."""
+        plan = load_scripted_keyboard_plan(CAGING_JSON_PATH)
+        summary = plan_summary(plan)
+        self.assertGreater(summary["max_grip_fraction"], 0.5)
+
+    def test_nominal_plan_no_continuous_grip(self):
+        """Old nominal plan does not use continuous grip."""
+        plan = load_scripted_keyboard_plan(NOMINAL_JSON_PATH)
+        summary = plan_summary(plan)
+        self.assertFalse(summary["uses_continuous_grip"])
+        self.assertIsNone(summary["min_grip_fraction"])
+        self.assertIsNone(summary["max_grip_fraction"])
+
+    def test_invalid_grip_fraction_low_raises(self):
+        """grip_fraction below 0 raises ValueError."""
+        bad_step = _make_step(grip_fraction=-0.1)
+        bad = _make_plan(steps=[bad_step])
+        with self.assertRaisesRegex(ValueError, "grip_fraction"):
+            validate_scripted_keyboard_plan(bad)
+
+    def test_invalid_grip_fraction_high_raises(self):
+        """grip_fraction above 1 raises ValueError."""
+        bad_step = _make_step(grip_fraction=1.01)
+        bad = _make_plan(steps=[bad_step])
+        with self.assertRaisesRegex(ValueError, "grip_fraction"):
+            validate_scripted_keyboard_plan(bad)
+
+    def test_invalid_grip_close_speed_raises(self):
+        """grip_close_speed <= 0 raises ValueError."""
+        bad_step = _make_step(grip_close_speed=0.0)
+        bad = _make_plan(steps=[bad_step])
+        with self.assertRaisesRegex(ValueError, "grip_close_speed"):
+            validate_scripted_keyboard_plan(bad)
+
+    def test_expanded_commands_carry_grip_fraction(self):
+        """Expanded commands carry grip_fraction and grip_close_speed from steps."""
+        step = _make_step(duration_ticks=3, grip_fraction=0.4, grip_close_speed=0.01)
+        plan = _make_plan(steps=[step])
+        expanded = expand_scripted_keyboard_plan(plan)
+        for cmd in expanded:
+            self.assertAlmostEqual(cmd.grip_fraction, 0.4)
+            self.assertAlmostEqual(cmd.grip_close_speed, 0.01)
+
+    def test_expanded_commands_none_grip_fraction_when_absent(self):
+        """Expanded commands have grip_fraction=None when not in step."""
+        plan = load_scripted_keyboard_plan(NOMINAL_JSON_PATH)
+        expanded = expand_scripted_keyboard_plan(plan)
+        for cmd in expanded:
+            self.assertIsNone(cmd.grip_fraction)
+            self.assertIsNone(cmd.grip_close_speed)
+
+    def test_valid_grip_fraction_boundary_values(self):
+        """0.0 and 1.0 are valid grip_fraction values."""
+        for frac in (0.0, 1.0):
+            step = _make_step(grip_fraction=frac)
+            plan = _make_plan(steps=[step])
+            validate_scripted_keyboard_plan(plan)  # should not raise
 
 
 if __name__ == "__main__":

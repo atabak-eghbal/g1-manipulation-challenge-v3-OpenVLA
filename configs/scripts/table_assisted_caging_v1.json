@@ -1,0 +1,118 @@
+{
+  "name": "table_assisted_caging_v1",
+  "teacher_type": "scripted_keyboard",
+  "description": "Table-assisted caging grasp plan using continuous grip fractions. The hand stays near the table, partially closes to form a cage, nudges the cylinder gently, tightens the cage, then attempts lift.",
+  "control_dt": 0.02,
+  "steps": [
+    {
+      "name": "settle",
+      "duration_ticks": 150,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.30, -0.20, 0.20],
+      "reach_active": false,
+      "grip_closed": false,
+      "grip_fraction": 0.0,
+      "grip_close_speed": 1.0
+    },
+    {
+      "name": "walk_forward_to_source",
+      "duration_ticks": 90,
+      "walk_cmd": [0.30, 0.0, 0.0],
+      "reach_target": [0.30, -0.20, 0.20],
+      "reach_active": true,
+      "grip_closed": false,
+      "grip_fraction": 0.0,
+      "grip_close_speed": 1.0
+    },
+    {
+      "name": "low_hover_source",
+      "duration_ticks": 140,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.32, -0.05, 0.08],
+      "reach_active": true,
+      "grip_closed": false,
+      "grip_fraction": 0.10,
+      "grip_close_speed": 0.02
+    },
+    {
+      "name": "pre_shape_open_cage",
+      "duration_ticks": 120,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.32, -0.05, 0.045],
+      "reach_active": true,
+      "grip_closed": false,
+      "grip_fraction": 0.25,
+      "grip_close_speed": 0.006
+    },
+    {
+      "name": "gentle_lateral_cage_nudge",
+      "duration_ticks": 180,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.34, -0.04, 0.045],
+      "reach_active": true,
+      "grip_closed": false,
+      "grip_fraction": 0.35,
+      "grip_close_speed": 0.004
+    },
+    {
+      "name": "soft_cage_close",
+      "duration_ticks": 220,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.34, -0.04, 0.045],
+      "reach_active": true,
+      "grip_closed": true,
+      "grip_fraction": 0.50,
+      "grip_close_speed": 0.003
+    },
+    {
+      "name": "tighten_cage",
+      "duration_ticks": 240,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.335, -0.045, 0.045],
+      "reach_active": true,
+      "grip_closed": true,
+      "grip_fraction": 0.68,
+      "grip_close_speed": 0.0025
+    },
+    {
+      "name": "test_lift_small",
+      "duration_ticks": 180,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.33, -0.06, 0.11],
+      "reach_active": true,
+      "grip_closed": true,
+      "grip_fraction": 0.75,
+      "grip_close_speed": 0.0025
+    },
+    {
+      "name": "lift_source",
+      "duration_ticks": 220,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.30, -0.20, 0.22],
+      "reach_active": true,
+      "grip_closed": true,
+      "grip_fraction": 0.82,
+      "grip_close_speed": 0.0025
+    },
+    {
+      "name": "hold_lift_observe",
+      "duration_ticks": 160,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.30, -0.20, 0.22],
+      "reach_active": true,
+      "grip_closed": true,
+      "grip_fraction": 0.82,
+      "grip_close_speed": 0.0025
+    },
+    {
+      "name": "release_debug",
+      "duration_ticks": 120,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.30, -0.20, 0.18],
+      "reach_active": true,
+      "grip_closed": false,
+      "grip_fraction": 0.0,
+      "grip_close_speed": 0.01
+    }
+  ]
+}

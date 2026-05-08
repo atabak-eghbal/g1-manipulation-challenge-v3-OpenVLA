@@ -1196,3 +1196,257 @@ The unit tests pass. The plan inspector reports the expected phases and total du
 
 Pass / Fail: Pending.
 Next Risk: A fixed open-loop keyboard macro may not solve the full task, especially under perturbations. Later steps should add task-success metrics and optionally feedback checkpoints.
+
+---
+
+## [2026-05-07] Step 23B: Scripted Keyboard Grasp Assurance + Task-Success Checks
+
+- **Goal / Hypothesis:** Add explicit grasp and task-outcome checks to the scripted keyboard teacher. The hypothesis is that a scripted teacher should not be treated as a valid teacher demonstration unless it actually attaches, lifts, and places the object.
+
+- **Reasoning:** Step 23A proved scripted-keyboard recording infrastructure, but visual inspection showed that the first open-loop macro did not pick up the cylinder. Step 23B adds the metrics needed to distinguish "script finished" from "task succeeded."
+
+- **Files Changed:**
+  - `vla_bridge/task_success.py` — pure task-outcome tracking helper
+  - `scripts/record_scripted_keyboard_demo.py` — attachment tracking, task summary, optional require-attachment checkpoint
+  - `scripts/inspect_vla_demo.py` — prints task-success fields from summary.json if present
+  - `tests/test_task_success.py` — unit tests for task success logic
+  - `vla_bridge/__init__.py` — exported TaskSuccessTracker
+  - `DEV_LOG.md` — appended this entry
+
+- **New Summary Fields:**
+  - `ever_attached`, `attach_tick`, `attach_phase`
+  - `object_lifted`, `object_on_target_table`, `task_success`, `failure_reason`
+  - `final_red_block_world`, `final_target_table_z`
+  - `final_height_above_target`, `final_xy_distance_to_target`
+  - `require_attachment`, `attachment_timeout_ticks`, `stop_on_failure`
+  - `stopped_early`, `stop_reason`
+
+- **Pass / Fail:** Pending.
+
+- **Next Risk:** The current scripted macro may still fail to attach. That is acceptable if the failure is detected honestly. The next tuning step should add a small close-grip reach search pattern or tune the source reach target.
+
+---
+
+## [2026-05-07] Step 24: Contact-Aware Physical Grasp MVP
+
+- **Goal / Hypothesis:** Add a second grasp backend (`ContactAwarePhysicalGrasp`) that monitors real MuJoCo contacts without teleporting the object. The hypothesis is that honest contact-based metrics will reveal whether the scripted teacher truly achieves a physical grasp, independent of the kinematic-attachment shortcut.
+
+- **Reasoning:** `KinematicAttachment` teleports and welds the cylinder the instant the palm is within 13 cm — a simulation shortcut. For a VLA training dataset to be physically meaningful, we need to know whether finger–object contact actually occurs. The new backend is an observer: it detects contacts, tracks contact streaks and lift height, and reports them in `summary()`. It does NOT move the object or disable its collisions, so it can be used safely alongside the existing task-success tracker.
+
+- **Architecture Decision:** Keep `KinematicAttachment` as the default for all recording pipelines (task-success still requires it to function). Add `ContactAwarePhysicalGrasp` as an alternate backend selectable via `--grasp-backend contact-aware-physical`. Both backends share the `GraspBackend` ABC. A `make_grasp_backend(name, ...)` factory selects between them. Scripts that call `backend.summary()` get a backend-specific dict; both classes implement `summary()`. The `GraspBackend` ABC also provides a no-op default `summary()` for forward compatibility.
+
+- **Key Design Choices:**
+  - `attached` property: for `ContactAwarePhysicalGrasp`, returns `grip_closed AND contact_streak >= stable_ticks`. No physics is modified.
+  - `stable_ticks=3` default: requires 3 consecutive physics ticks (15 ms at 200 Hz) to count as stable.
+  - `lift_threshold_m=0.02`: object is "lifted" once it rises more than 2 cm above its initial world-Z.
+  - Finger body auto-detection scans body names for patterns (`right_hand`, `right_finger`, `right_palm`, `right_zero`–`right_five`, etc.). Explicit `finger_body_names` list overrides auto-detection.
+  - MuJoCo contact detection note: static-static body pairs are skipped by MuJoCo. Auto-detection is only useful when at least one body (object) is dynamic.
+
+- **Files Changed:**
+  - `common/grasp.py` — added `GraspContactStats` dataclass, `ContactAwarePhysicalGrasp` class, `make_grasp_backend()` factory, `summary()` to `GraspBackend` ABC and `KinematicAttachment`
+  - `tests/test_contact_aware_grasp.py` — new: 13 test cases (A–I for ContactAwarePhysicalGrasp + 4 factory tests)
+  - `scripts/record_scripted_keyboard_demo.py` — added `--grasp-backend` CLI arg, use `make_grasp_backend()`, `grasp_summary` key in summary.json
+  - `scripts/record_vla_demo.py` — same: `--grasp-backend` CLI arg, `make_grasp_backend()`, `grasp_summary`
+  - `DEV_LOG.md` — this entry
+
+- **Commands to Run:**
+  ```bash
+  python -m unittest tests/test_contact_aware_grasp.py
+
+  python -m unittest tests/test_scripted_keyboard.py tests/test_task_success.py \
+    tests/test_vla_demo_schema.py tests/test_vla_action_adapter.py
+
+  python scripts/record_scripted_keyboard_demo.py \
+    --script-config configs/scripts/nominal_scripted_keyboard_v2.json \
+    --output-dir data/vla_demos/scripted_keyboard_step24_kinematic_no_images \
+    --record-every 5 --no-images --grasp-backend kinematic
+
+  python scripts/record_scripted_keyboard_demo.py \
+    --script-config configs/scripts/nominal_scripted_keyboard_v2.json \
+    --output-dir data/vla_demos/scripted_keyboard_step24_physical_no_images \
+    --record-every 5 --no-images --grasp-backend contact-aware-physical
+  ```
+
+- **New `grasp_summary` Fields (contact-aware-physical backend):**
+  - `backend`, `n_contact_ticks`, `n_stable_contact_ticks`, `max_consecutive_contact`
+  - `first_contact_tick`, `grip_attempted_ticks`
+  - `lift_height_m`, `ever_lifted`
+  - `stable_ticks_threshold`, `lift_threshold_m`
+  - `n_finger_geoms`, `n_obj_geoms`
+
+- **Pass / Fail:** 13/13 new tests pass; 51/51 existing tests pass.
+
+- **Next Risk:** The G1 finger body names in the actual scene.xml may not match any of the auto-detection patterns (`right_finger`, `right_hand`, etc.). If so, `n_finger_geoms=0` and no contacts will ever be detected. In that case, pass `finger_body_names` explicitly to `ContactAwarePhysicalGrasp`, or add the correct pattern to `_FINGER_NAME_PATTERNS`.
+
+---
+
+## [2026-05-08] Step 25: Contact-Guided Grasp Policy — Development Log
+
+- **Goal / Hypothesis:** Replace the kinematic-snap `KinematicAttachment` with a physically-aware grasp policy that uses real MuJoCo finger–object contacts to time grip closure. The robot should feel the cylinder with its fingers and wrap around it slowly rather than snapping shut from a distance.
+
+- **Reasoning:** Step 24 proved that `ContactAwarePhysicalGrasp` can detect contacts without modifying physics. The next goal was to build a policy (`ContactGuidedGraspPolicy`) that intercepts the `close_grip` phase of the scripted keyboard plan and replaces it with a contact-driven approach + pinch sequence.
+
+---
+
+### Attempt 1 — 3D probe toward cylinder center
+
+**Hypothesis:** Step the world-frame reach target 5 mm/tick in 3D toward the cylinder body center. The palm follows the target, closing the lateral and vertical gap simultaneously.
+
+**Result: FAILED.** After `descend_source`, the reach target sits at z ≈ 0.773 m (pelvis-relative) while the cylinder center is at world z ≈ 0.85 m. Moving the target 3D toward the cylinder body center increased the *z component* of the target (from 0.773 toward 0.85). Since the palm sits ~77 mm above the reach target due to the reacher's kinematic geometry, pushing the target upward actually drove the palm **up and away** from the table surface. No contact ever occurred.
+
+**Root cause:** The gap is lateral (x/y ≈ 10 cm), not vertical. The palm is already at roughly the correct height after `descend_source`.
+
+---
+
+### Attempt 2 — Lateral-only probe (APPROACH phase)
+
+**Fix:** Project palm → cylinder onto the horizontal plane. Step the reach target only in x/y, keep z fixed. Introduced `PROBE_STEP_M = 0.005` (5 mm/tick ≈ 25 cm/s).
+
+**Result: PARTIAL.** Palm reached the cylinder laterally, but at 25 cm/s the hand knocked the cylinder off the table before the fingers could wrap around it.
+
+---
+
+### Attempt 3 — Contact-triggered close (binary)
+
+**Fix:** Added `CLOSE_ON_CONTACT = 2` threshold on `contact_streak`. When `ContactAwarePhysicalGrasp` reports ≥ 2 consecutive finger–object contact ticks, set `grip_closed=True` immediately. Also added `GRIP_LATERAL_DIST = 0.06` proximity fallback and `MAX_PROBE_TICKS = 800` timeout.
+
+**Result: PARTIAL.** Contact was detected and grip closed. But:
+1. `grip_closed=True` in `apply_pd_control()` snapped all finger actuators to their closed-position targets in a **single physics tick** (binary jump). The fingers hit the cylinder at high angular velocity and pushed it sideways before friction could hold it.
+2. Approach speed was also reduced to `PROBE_STEP_M = 0.001` (1 mm/tick = 5 cm/s) to prevent knocking — this worked; approach became smooth.
+
+---
+
+### Attempt 4 — Slow grip close via PINCH phase (time-based)
+
+**Fix (this session):** Replaced the binary `grip_closed` snap with a two-phase sequence:
+
+**Phase 1 — APPROACH:** lateral drift at 1 mm/tick, `grip_closed=False`, step target in x/y until `contact_streak ≥ 2`, proximity < 6 cm, or timeout.
+
+**Phase 2 — PINCH:** on entering pinch, `grip_closed=True` but `grip_close_speed` is throttled to a slow ramp. Continues pressing laterally at 0.3 mm/tick. Exits after `PINCH_TICKS` control ticks or when `contact_count() ≥ MIN_CONTACTS`.
+
+**Controller change (`common/controller.py`):** `apply_pd_control()` now ramps `_grip_fraction` toward the binary target (`0` or `1`) at `grip_close_speed` per **physics tick** instead of snapping. Default `grip_close_speed = 1.0` preserves all existing FSM/keyboard behavior unchanged. The contact-guided policy sets `grip_close_speed = GRIP_CLOSE_SPEED = 0.008` on pinch entry (≈ 0.6 s to fully close at 200 Hz physics) and restores `1.0` after.
+
+**Files changed in this step:**
+- `common/controller.py` — added `_grip_fraction`, `grip_close_speed`, rate-limited ramp in `apply_pd_control()`
+- `common/grasp.py` — added `contact_streak` property and `contact_count()` method to `ContactAwarePhysicalGrasp`
+- `run.py` — added `ContactGuidedGraspPolicy` class with APPROACH + PINCH phases; added `--policy contact-guided-grasp` and `--grasp-backend` CLI args
+
+**Status:** Implementation complete. Physical testing of slow finger wrap around cylinder pending.
+
+**Constants (current):**
+
+| Constant | Value | Meaning |
+|---|---|---|
+| `PROBE_STEP_M` | 0.001 | 1 mm/tick lateral approach (≈ 5 cm/s) |
+| `CLOSE_ON_CONTACT` | 2 | contact_streak threshold to enter pinch |
+| `GRIP_LATERAL_DIST` | 0.06 | proximity fallback (6 cm) |
+| `MAX_PROBE_TICKS` | 800 | approach timeout |
+| `PINCH_STEP_M` | 0.0003 | 0.3 mm/tick press during pinch |
+| `PINCH_TICKS` | 120 | control ticks in pinch (~2.4 s) |
+| `MIN_CONTACTS` | 2 | commit early if ≥2 finger-object contacts |
+| `GRIP_CLOSE_SPEED` | 0.008 | fraction/physics-tick (~0.6 s to full close) |
+
+**To run:**
+```bash
+python run.py --policy contact-guided-grasp --grasp-backend contact-aware-physical
+```
+
+Expected terminal output sequence:
+```
+[contact-guided] probe start — lateral_palm_to_cyl=X.X cm  palm_z=0.XXX  cyl_z=0.XXX
+[contact-guided] entering pinch — contact (streak=2)  lateral=X.X cm  probe_ticks=XXX
+[contact-guided] grip committed — contacts=2  pinch_ticks=XX  lateral=X.X cm
+```
+
+- **Pass / Fail:** Pending physical validation.
+- **Next Risk:** Even at `grip_close_speed = 0.008`, the actuator PD gains may be strong enough to push the cylinder sideways as fingers make contact. If so, lower `grip_close_speed` further or add a wrist-position hold during pinch to prevent the arm from drifting into the cylinder as it curls.
+
+---
+
+## [2026-05-08] Step 26: Table-Assisted Caging Grasp
+
+- **Goal / Hypothesis:** Improve grasp reliability by moving away from binary pinch and toward a table-assisted caging strategy. The hypothesis is that a slower continuous grip fraction and staged caging plan will reduce cylinder knock-over compared with contact-triggered binary closure.
+
+- **Reasoning:** Step 24/25 showed that contact detection works, but the first contact moment is unstable. Even with slow binary grip ramping, the fingers can still push the cylinder sideways. A caging strategy uses the table as environmental support and gradually traps the object before attempting lift.
+
+### Step 26A — Expose continuous grip fraction
+
+Modified `common/controller.py`:
+- Added `grip_target_fraction: float | None = None`
+- Added `set_grip_fraction(fraction, *, close_speed=None)` — sets continuous override
+- Added `clear_grip_fraction_override()` — restores binary `grip_closed` behaviour
+- Added `_next_grip_fraction(current, target, speed)` — pure static helper (testable without MuJoCo)
+- Modified `apply_pd_control()` to use `grip_target_fraction` when not None; falls back to binary `grip_closed` otherwise
+- Default `grip_close_speed=1.0` preserves all existing FSM/keyboard/scripted behaviour
+
+### Step 26B — Scripted table-assisted caging plan
+
+Created `configs/scripts/table_assisted_caging_v1.json` (11 phases, 1820 ticks ≈ 36 s):
+```
+settle → walk_forward_to_source → low_hover_source → pre_shape_open_cage →
+gentle_lateral_cage_nudge → soft_cage_close → tighten_cage →
+test_lift_small → lift_source → hold_lift_observe → release_debug
+```
+Grip fractions: 0.0 → 0.10 → 0.25 → 0.35 → 0.50 → 0.68 → 0.75 → 0.82 → 0.0
+
+Extended `vla_bridge/scripted_keyboard.py`:
+- `ScriptedKeyboardStep` and `ExpandedScriptedCommand` now have optional `grip_fraction` and `grip_close_speed` fields
+- Old plans without these fields load unchanged (defaults to `None`)
+- Validation: `grip_fraction ∈ [0,1]`, `grip_close_speed > 0`
+- `plan_summary()` reports `uses_continuous_grip`, `min_grip_fraction`, `max_grip_fraction`
+
+### Step 26C — Object-motion metrics + grip-fraction stats
+
+Extended `scripts/record_scripted_keyboard_demo.py`:
+- `ObjectMotionTracker` class: tracks `max_z`, `min_z`, `max_xy_displacement`, `lift_height_from_initial`
+- Heuristic `possible_knockover_or_push`: True if `max_xy_displacement > 0.15m AND lift < 0.03m` OR `final_z < initial_z - 0.05m`
+- New summary fields: `object_motion_summary`, `uses_continuous_grip`, `min/max/mean_commanded_grip_fraction`, `final_grip_fraction`, `caging_plan`
+- `_policy_output_to_controller()` now calls `ctrl.set_grip_fraction()` when command has `grip_fraction != None`
+
+### Step 26D — Comparison script
+
+Created `scripts/compare_grasp_runs.py`:
+- Reads multiple `summary.json` files, extracts key fields via dot-path, prints a side-by-side table
+- Optional `--output-json` saves the comparison as a JSON array
+
+### Validation run results
+
+**Kinematic baseline (`nominal_scripted_keyboard_v1`):**
+```
+ever_attached: False  (kinematic didn't fire — arm never reached within 13 cm)
+max_xy_displacement: 0.0003 m
+possible_knockover_or_push: True  ← false positive (cylinder settled from spawn height)
+```
+
+**Caging run (`table_assisted_caging_v1`, contact-aware-physical backend):**
+```
+n_contact_ticks: 0      ← zero finger–object contacts
+max_xy_displacement: 0.0003 m  ← cylinder was NOT knocked laterally
+possible_knockover_or_push: True  ← false positive (same settle artefact as above)
+```
+
+**Key observations:**
+1. **0 contacts detected.** The caging reach targets (e.g. `[0.34, -0.04, 0.045]`) may place the palm lateral to the cylinder without touching it — the 90-tick walk may not bring the robot close enough for pelvis-relative reach targets to land on the cylinder.
+2. **Cylinder was not knocked.** `max_xy_displacement = 0.3 mm` — the caging approach did not push the object. This is the desired property.
+3. **`possible_knockover_or_push` is a false positive** in both runs. The heuristic fires because `initial_red_block_world[2] = 0.850` (spawn height before physics settle) but `final_z ≈ 0.768` (settled table-resting height). The drop of ~8 cm is gravity settling, not a knock. **Fix for next step:** capture initial block position after the first physics settle, not before.
+
+- **Files Changed:**
+  - `common/controller.py` — continuous grip fraction API
+  - `vla_bridge/scripted_keyboard.py` — grip_fraction/grip_close_speed fields
+  - `scripts/inspect_scripted_keyboard_plan.py` — prints new grip stats
+  - `scripts/record_scripted_keyboard_demo.py` — object-motion tracking, grip stats
+  - `scripts/compare_grasp_runs.py` — new comparison tool
+  - `configs/scripts/table_assisted_caging_v1.json` — new caging plan
+  - `tests/test_scripted_keyboard.py` — 11 new tests
+  - `tests/test_grip_fraction_controller.py` — new (9 pure unit tests)
+  - `tests/test_compare_grasp_runs.py` — new (10 tests)
+  - `DEV_LOG.md` — this entry
+
+- **Test Results:** 97/97 tests pass.
+
+- **Pass / Fail:** Implementation PASS. Honest physical result: caging plan recorded successfully with honest zero-contact metrics. Cylinder not knocked. Reach targets need tuning so fingers actually contact the cylinder.
+
+- **Next Risk:**
+  1. Caging reach targets need calibration — either tune the pelvis-relative targets or add a contact-gated phase that waits for `contact_streak >= 1` before committing to tighten.
+  2. Fix the false-positive `possible_knockover_or_push` heuristic by sampling initial block position after physics settle (after the `settle` phase completes, not at rollout start).
+  3. The `ContactGuidedGraspPolicy` in `run.py` (viewer) also needs to be updated to use `set_grip_fraction()` for consistency with the new API.

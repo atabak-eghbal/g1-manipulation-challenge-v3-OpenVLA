@@ -60,6 +60,13 @@ class WalkerReacherController:
 
     # Right hand grip state
     self.grip_closed = False
+    # Fraction of fully-closed position [0, 1].  Ramped toward 0 or 1 each
+    # physics tick at grip_close_speed.  1.0 = instant (legacy behaviour).
+    self._grip_fraction   = 0.0
+    self.grip_close_speed = 1.0    # fraction per physics tick; lower = slower
+    # Optional continuous override: when not None, the target fraction is this
+    # value rather than the binary 0/1 derived from grip_closed.
+    self.grip_target_fraction: float | None = None
 
     self._build_joint_mappings()
     self._build_reacher_mappings()
@@ -387,10 +394,44 @@ class WalkerReacherController:
       if aid >= 0:
         self.right_finger_actuators.append((aid, closed_val))
 
+  # ------------------------------------------------------------------ #
+  # Continuous grip helpers
+  # ------------------------------------------------------------------ #
+
+  def set_grip_fraction(self, fraction: float, *, close_speed: float | None = None) -> None:
+    """Command a specific finger-closure fraction in [0, 1].
+
+    Overrides the binary grip_closed target until clear_grip_fraction_override()
+    is called.  Optionally updates grip_close_speed for this motion.
+    """
+    self.grip_target_fraction = float(np.clip(fraction, 0.0, 1.0))
+    if close_speed is not None:
+      self.grip_close_speed = float(close_speed)
+
+  def clear_grip_fraction_override(self) -> None:
+    """Restore binary grip_closed behaviour."""
+    self.grip_target_fraction = None
+
+  @staticmethod
+  def _next_grip_fraction(current: float, target: float, speed: float) -> float:
+    """Pure helper: advance current toward target by at most speed, clamp to [0,1]."""
+    delta = target - current
+    next_val = current + max(-speed, min(speed, delta))
+    return max(0.0, min(1.0, next_val))
+
+  # ------------------------------------------------------------------ #
+
   def apply_pd_control(self, target_pos):
     for i, act_id in enumerate(self.actuator_ids):
       if act_id >= 0:
         self.data.ctrl[act_id] = target_pos[i]
-    # Apply grip
+    # Determine target grip fraction: continuous override or binary from grip_closed.
+    if self.grip_target_fraction is not None:
+      target = self.grip_target_fraction
+    else:
+      target = 1.0 if self.grip_closed else 0.0
+    self._grip_fraction = self._next_grip_fraction(
+      self._grip_fraction, target, self.grip_close_speed
+    )
     for act_id, closed_val in self.right_finger_actuators:
-      self.data.ctrl[act_id] = closed_val if self.grip_closed else 0.0
+      self.data.ctrl[act_id] = self._grip_fraction * closed_val
