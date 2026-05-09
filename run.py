@@ -519,9 +519,9 @@ def main():
     print(f"  {summary['num_steps']} steps  {summary['total_ticks']} ticks  {summary['total_seconds']:.1f}s")
     print("  Space = rewind to start")
   elif args.policy == "contact-guided-grasp":
-    from common.grasp import ContactAwarePhysicalGrasp
+    from common.grasp import HybridGraspBackend
     rb_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "red_block")
-    grasp_backend = ContactAwarePhysicalGrasp(
+    grasp_backend = HybridGraspBackend(
         model, data, ctrl.right_palm_site_id, rb_body_id
     )
     policy = ContactGuidedGraspPolicy(ctrl, grasp_backend, rb_body_id)

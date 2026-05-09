@@ -42,12 +42,12 @@ K_WZ,  WZ_CAP  = 1.2, 0.25   # wz: arctan2-based yaw
 
 # ---- Hover and grasp heights above table surface ----
 HOVER_SOURCE_HEIGHT = 0.18   # m: pre-grasp hover above table top
-GRASP_HEIGHT        = 0.06   # m: cylinder mid-body height above table top
+GRASP_HEIGHT        = 0.035  # m: cylinder centre height above table top (≈ cylinder radius)
 
 # ---- Palm-to-target distance thresholds ----
 # The reacher has an ~12 cm accuracy floor; thresholds must stay ≥ this.
 HOVER_SOURCE_THRESHOLD   = 0.14   # m
-DESCEND_SOURCE_THRESHOLD = 0.12   # m
+DESCEND_SOURCE_THRESHOLD = 0.08   # m — descend until palm is near cylinder centre
 
 # ---- Per-state timeouts (control ticks at 50 Hz) ----
 HOVER_SOURCE_TIMEOUT   = 200   # ~4 s fallback if threshold never met
