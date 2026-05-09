@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from common.controller import WalkerReacherController
-from common.grasp import KinematicAttachment
+from common.grasp import KinematicAttachment, make_grasp_backend
 from common.onnx_policy import ONNXPolicy
 from common.scene import CameraRenderer, reset_robot
 from policies.fsm import FSMPolicy
@@ -215,6 +215,15 @@ def main() -> int:
         metavar=("DX", "DY"),
         help="Small x/y offset in meters applied to the red_block initial pose before recording.",
     )
+    parser.add_argument(
+        "--grasp-backend",
+        choices=["kinematic", "contact-aware-physical"],
+        default="kinematic",
+        help=(
+            "Grasp backend to use: 'kinematic' (teleport-weld, default) or "
+            "'contact-aware-physical' (observe-only contact detection)."
+        ),
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output_dir)
@@ -253,9 +262,10 @@ def main() -> int:
         model, data, walker, croucher, rotator, config, right_reacher=right_reacher
     )
     rb_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "red_block")
-    grasp_backend = KinematicAttachment(
-        model, data, ctrl.right_palm_site_id, rb_body_id
+    grasp_backend = make_grasp_backend(
+        args.grasp_backend, model, data, ctrl.right_palm_site_id, rb_body_id
     )
+    print(f"[record_vla_demo] grasp_backend={args.grasp_backend}")
     policy = FSMPolicy(ctrl, grasp_backend=grasp_backend)
 
     # --- Optional camera renderer ---
@@ -347,6 +357,8 @@ def main() -> int:
     summary["seed"] = args.seed
     summary["scenario"] = dict(scenario)
     summary["red_block_xy_offset_m"] = [red_offset_dx, red_offset_dy]
+    if hasattr(grasp_backend, "summary"):
+        summary["grasp_summary"] = grasp_backend.summary()
     summary_path = output_dir / "summary.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     with open(summary_path, "w", encoding="utf-8") as f:

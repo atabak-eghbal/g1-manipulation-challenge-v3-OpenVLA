@@ -102,6 +102,7 @@ from vla_bridge.scripted_keyboard import (
     command_for_tick,
     plan_summary,
 )
+from vla_bridge.task_success import TaskSuccessTracker
 
 __all__ = [
     # Step 13 — action adapter
@@ -197,4 +198,6 @@ __all__ = [
     "expand_scripted_keyboard_plan",
     "command_for_tick",
     "plan_summary",
+    # Step 23B — task success tracking
+    "TaskSuccessTracker",
 ]

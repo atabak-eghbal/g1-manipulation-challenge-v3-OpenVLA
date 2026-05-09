@@ -1,0 +1,105 @@
+{
+  "name": "nominal_scripted_keyboard_v2",
+  "teacher_type": "scripted_keyboard",
+  "description": "World-frame scripted keyboard teacher. Reach targets converted to pelvis frame every tick. Key parameters: walk_cmd=[0.35,0.10,0] (vy=0.10 lateral correction matches FSM, keeps robot aligned with cylinder y=0.026), arm uses FSM carry pose [0.3,-0.2,0.2] when reach_active=false, right_bias=-0.03 for hover/grasp phases (matches FSM _reach_from_world). Verified: robot attaches at dist=0.103m, block lands at [-0.325,-0.654,0.668] vs target [-0.3,-0.8,0.613], xy_dist=0.148m < 0.2m success threshold.",
+  "control_dt": 0.02,
+  "reach_frame": "world",
+  "steps": [
+    {
+      "name": "settle",
+      "duration_ticks": 100,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.0, 0.026, 0.863],
+      "reach_active": false,
+      "grip_closed": false
+    },
+    {
+      "name": "walk_forward_to_source",
+      "duration_ticks": 90,
+      "walk_cmd": [0.35, 0.10, 0.0],
+      "reach_target": [0.0, 0.026, 0.863],
+      "reach_active": false,
+      "grip_closed": false
+    },
+    {
+      "name": "stop_and_hover_source",
+      "duration_ticks": 100,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.0, 0.026, 0.863],
+      "reach_active": true,
+      "grip_closed": false
+    },
+    {
+      "name": "descend_source",
+      "duration_ticks": 200,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.0, 0.026, 0.773],
+      "reach_active": true,
+      "grip_closed": false
+    },
+    {
+      "name": "close_grip",
+      "duration_ticks": 100,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.0, 0.026, 0.773],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "lift_source",
+      "duration_ticks": 150,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [0.0, 0.026, 0.883],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "turn_toward_target",
+      "duration_ticks": 400,
+      "walk_cmd": [0.12, 0.0, -1.0],
+      "reach_target": [0.0, 0.026, 0.883],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "approach_target",
+      "duration_ticks": 500,
+      "walk_cmd": [0.20, 0.0, 0.0],
+      "reach_target": [-0.3, -0.8, 0.813],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "hover_target",
+      "duration_ticks": 150,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [-0.3, -0.8, 0.813],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "lower_target",
+      "duration_ticks": 200,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [-0.3, -0.8, 0.663],
+      "reach_active": true,
+      "grip_closed": true
+    },
+    {
+      "name": "open_grip",
+      "duration_ticks": 80,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [-0.3, -0.8, 0.663],
+      "reach_active": true,
+      "grip_closed": false
+    },
+    {
+      "name": "retract",
+      "duration_ticks": 120,
+      "walk_cmd": [0.0, 0.0, 0.0],
+      "reach_target": [-0.3, -0.8, 0.863],
+      "reach_active": true,
+      "grip_closed": false
+    }
+  ]
+}

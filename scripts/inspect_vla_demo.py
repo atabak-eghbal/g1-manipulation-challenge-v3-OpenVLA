@@ -7,6 +7,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -16,6 +17,16 @@ sys.path.insert(0, str(ROOT))
 import numpy as np
 
 from vla_bridge.demo_schema import read_jsonl
+
+
+_TASK_SUCCESS_FIELDS = (
+    "teacher_type",
+    "ever_attached",
+    "task_success",
+    "failure_reason",
+    "object_on_target_table",
+    "final_height_above_target",
+)
 
 
 def main() -> int:
@@ -52,6 +63,22 @@ def main() -> int:
     print(f"reach_active_steps: {reach_active_steps}")
     print(f"first_image      : {steps[0].image_path}")
     print(f"last_image       : {steps[-1].image_path}")
+
+    # Print task-success fields from sibling summary.json if present
+    summary_path = args.metadata.parent / "summary.json"
+    if summary_path.exists():
+        try:
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            any_printed = False
+            for key in _TASK_SUCCESS_FIELDS:
+                if key in summary:
+                    if not any_printed:
+                        print("\n--- Task Success (from summary.json) ---")
+                        any_printed = True
+                    print(f"{key:<28}: {summary[key]}")
+        except Exception:
+            pass
+
     return 0
 
 

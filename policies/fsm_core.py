@@ -16,16 +16,25 @@ from .base import PolicyOutput
 # Safe carry-pose: right arm held clear of the legs while walking.
 CARRY_POSE: tuple[float, float, float] = (0.3, -0.2, 0.2)
 
+# Carry pose used while physically grasping the cylinder during locomotion.
+# Pelvis is at ~1.0 m world Z; cylinder is held at ~0.89 m → pelvis-frame Z ≈ -0.10.
+# Palm is kept ~3 cm above cylinder: Z = -0.07.  X = 0.27 (forward), Y = -0.07 (right).
+CARRY_POSE_GRASPED: tuple[float, float, float] = (0.27, -0.07, -0.07)
+
 # Ticks in SETTLE before beginning autonomous task (~3 s at 50 Hz).
-SETTLE_TICKS = 150
+SETTLE_TICKS  = 150
+# Ticks to strafe left after settling so the right arm aligns with the cylinder Y.
+Y_ALIGN_TICKS = 100
+Y_ALIGN_VY    = 0.18   # max strafe velocity (m/s)
 
 # ---- Approach: staircase forward speeds ----
-APPROACH_TARGET_X = 0.34   # m forward — cylinder at reach when this close
+APPROACH_TARGET_X  = 0.22   # m forward — used for TARGET-TABLE stand-off
+SOURCE_APPROACH_X  = 0.10   # m forward — stop walking when source cylinder this close in pelvis X
 
-REACH_X_MIN, REACH_X_MAX = 0.20, 0.38   # x reachability window
-REACH_Y_MIN, REACH_Y_MAX = -0.14, 0.02  # y reachability window
+REACH_X_MIN, REACH_X_MAX = 0.08, 0.22   # x reachability window
+REACH_Y_MIN, REACH_Y_MAX = -0.14, 0.08  # y reachability window
 
-REACH_DEBOUNCE = 8   # consecutive in-window ticks before APPROACH → HOVER
+REACH_DEBOUNCE = 4   # consecutive in-window ticks before APPROACH → HOVER
 
 VX_FAST, VX_MED, VX_SLOW = 0.35, 0.22, 0.12   # staircase vx (m/s)
 K_VY,  VY_CAP  = 1.8, 0.18   # vy: proportional toward y = -0.05
@@ -60,12 +69,12 @@ TARGET_REACH_DEBOUNCE   = 8      # consecutive in-window ticks → HOVER_TARGET
 TARGET_APPROACH_TIMEOUT = 1200    # ~24 s fallback (increased from 900)
 
 # ---- Target table placement ----
-HOVER_TARGET_HEIGHT    = 0.18   # m above target surface for pre-place hover
+HOVER_TARGET_HEIGHT    = 0.30   # m above target surface for pre-place hover
 PLACE_HEIGHT           = 0.06   # m above target surface for release
 HOVER_TARGET_THRESHOLD = 0.14   # m palm-to-hover-point (same floor as source)
-LOWER_TARGET_THRESHOLD = 0.14   # m palm-to-place-point
-HOVER_TARGET_TIMEOUT   = 200    # ~4 s
-LOWER_TARGET_TIMEOUT   = 300    # ~6 s
+LOWER_TARGET_THRESHOLD = 0.25   # m palm-to-place-point — exit before finger tips reach cylinder
+HOVER_TARGET_TIMEOUT   = 600    # ~12 s
+LOWER_TARGET_TIMEOUT   = 600    # ~12 s
 OPEN_GRIP_TIMEOUT      = 100    # ~2 s: wait for kinematic release
 RETRACT_TIMEOUT        = 200    # ~4 s: arm clear of target table
 
@@ -249,13 +258,18 @@ class FSMCore:
     # ------------------------------------------------------------------ #
 
     def _settle(self) -> PolicyOutput:
+        total = SETTLE_TICKS + Y_ALIGN_TICKS
         if self._tick_state == 0:
-            print(f"[FSM] SETTLE  holding {SETTLE_TICKS} ticks "
-                  f"(~{SETTLE_TICKS / 50:.0f} s) before approach")
-        if self._tick_state >= SETTLE_TICKS:
+            print(f"[FSM] SETTLE  settling {SETTLE_TICKS} ticks then Y-align {Y_ALIGN_TICKS} ticks")
+        if self._tick_state >= total:
             self._transition(FSMState.APPROACH_SOURCE)
+        # After initial settle: strafe left to bring right arm into cylinder's Y workspace.
+        if self._tick_state >= SETTLE_TICKS:
+            vy = Y_ALIGN_VY
+        else:
+            vy = 0.0
         return PolicyOutput(
-            walk_cmd=(0.0, 0.0, 0.0),
+            walk_cmd=(0.0, vy, 0.0),
             reach_target=CARRY_POSE,
             reach_active=False,
             grip_closed=False,
@@ -392,9 +406,14 @@ class FSMCore:
                   f"drop_pelvis=({drop[0]:.3f},{drop[1]:.3f})  "
                   f"pelvis=({ppos[0]:.3f},{ppos[1]:.3f})")
             self._transition(FSMState.HOVER_TARGET)
+        # Pre-position arm Y toward the drop's lateral offset so that when
+        # HOVER_TARGET begins the reacher only needs to change Z, not Y.
+        # right_bias for _reach_from_world is -0.03 — match that clamping here.
+        carry_y = float(np.clip(drop[1], -0.20, -0.03))
+        dynamic_carry = (CARRY_POSE[0], carry_y, CARRY_POSE[2])
         return PolicyOutput(
             walk_cmd=walk_cmd,
-            reach_target=CARRY_POSE,
+            reach_target=dynamic_carry,
             reach_active=True,
             grip_closed=True,
         )
@@ -456,8 +475,9 @@ class FSMCore:
     def _open_grip(self) -> PolicyOutput:
         if self._tick_state == 0:
             print("[FSM] OPEN_GRIP  releasing cylinder")
-        place = self._target_place_world()
-        reach = self._reach_from_world(place, right_bias=-0.03)
+        # Keep arm at hover height — finger tips stay above settled cylinder top.
+        hover = self._target_hover_world()
+        reach = self._reach_from_world(hover, right_bias=-0.03)
 
         if not self._attached:
             print(f"[FSM] OPEN_GRIP → released  t={self._tick_total}")
@@ -656,7 +676,7 @@ class FSMCore:
 
     def _approach_walk_cmd(self, cyl: np.ndarray) -> tuple[float, float, float]:
         """Staircase vx + proportional vy/wz toward cylinder."""
-        x_err = cyl[0] - APPROACH_TARGET_X
+        x_err = cyl[0] - SOURCE_APPROACH_X
         if x_err > 0.18:
             vx = VX_FAST
         elif x_err > 0.10:
@@ -665,79 +685,71 @@ class FSMCore:
             vx = VX_SLOW
         else:
             vx = 0.0
-        y_err = cyl[1] - (-0.05)
-        vy = float(np.clip(K_VY * y_err, -VY_CAP, VY_CAP))
-        wz = float(np.clip(
-            K_WZ * np.arctan2(cyl[1], max(cyl[0], 0.15)),
-            -WZ_CAP, WZ_CAP,
-        ))
+        # During close approach suppress lateral/yaw corrections — large vy cancels vx.
+        if x_err > 0.10:
+            # vy > 0 = robot strafes LEFT (+Y world).  We want cyl_pelvis_Y → -0.05,
+            # which requires robot to move LEFT (robot_world_Y increases).
+            # When robot moves left, cyl_pelvis_Y = cyl_world_Y − robot_world_Y decreases. ✓
+            y_err = cyl[1] - (-0.05)   # positive when cylinder too far left
+            vy = float(np.clip(K_VY * y_err, -VY_CAP, VY_CAP))
+            wz = float(np.clip(
+                K_WZ * np.arctan2(cyl[1], max(cyl[0], 0.15)),
+                -WZ_CAP, WZ_CAP,
+            ))
+        else:
+            vy = 0.0
+            wz = 0.0
         return (vx, vy, wz)
 
     def _target_approach_walk_cmd(self, drop_pelvis: np.ndarray) -> tuple[float, float, float]:
-        """Two-phase world-frame approach to the target-table placement corridor.
+        """Two-phase approach: turn to face drop, then walk straight forward.
 
-        Phase 1 — turn CW to face -y: uses vx=VX_P1 (not 0) so the walker stays
-          stable.  R = VX_P1/WZ_P1 = 0.24 m; at this radius the target table
-          remains outside the turning circle, so Phase 2 can reach it head-on.
-
-        Phase 2 — drive to standing waypoint: once |yaw + π/2| < PHASE1_ALIGN_TOL,
-          decompose world-frame positional error into forward/lateral components
-          and apply staircase vx + proportional vy + bearing wz.
+        Simultaneous vx+wz severely reduces locomotion efficiency — the walker
+        stalls.  Separating the phases gives reliable progress:
+          Phase 1 (|bearing_err| > 0.25 rad): pure rotation, vx=VX_P1 to keep
+            walker active.  Use full WZ_P1 so the robot actually turns.
+          Phase 2 (aligned): pure forward walk at VX_FAST, wz=0.  The robot
+            may drift slightly in lat but the approach window is generous (0.30 m).
         """
-        pelvis_pos = self._data.qpos[:3]
-        yaw = self._pelvis_yaw()
-
-        # ---- Phase 1: CW turn until facing -y --------------------------------
-        if abs(yaw + np.pi / 2) > PHASE1_ALIGN_TOL:
-            return (VX_P1, 0.0, -WZ_P1)
-
-        # ---- Phase 2: drive toward standing waypoint -------------------------
-        # Standing waypoint: offset from drop point to keep it in the right arm's
-        # natural workspace (y ≈ -0.15 in pelvis frame).
-        # Facing -y world, +y pelvis is +x world.  So we want pelvis_x = drop_x + 0.15.
-        drop_w  = self._target_drop_pt
-        stand_x = float(drop_w[0]) + 0.15
-        stand_y = float(drop_w[1]) + APPROACH_TARGET_X
-
-        ex = stand_x - float(pelvis_pos[0])
-        ey = stand_y - float(pelvis_pos[1])
-        dist = float(np.sqrt(ex * ex + ey * ey))
-
-        cos_y, sin_y = float(np.cos(yaw)), float(np.sin(yaw))
-        left_err = -ex * sin_y + ey * cos_y
-
-        if dist > 0.35:   vx = VX_FAST
-        elif dist > 0.18: vx = VX_MED
-        else:             vx = VX_SLOW
-
-        vy = float(np.clip(K_VY * left_err, -VY_CAP, VY_CAP))
-
-        # Use pelvis-frame bearing to the drop point for stable yaw control.
         drop_p = self._target_drop_in_pelvis()
-        wz = float(np.clip(
-            K_WZ * np.arctan2(drop_p[1], max(drop_p[0], 0.15)),
-            -WZ_CAP, WZ_CAP,
+        fwd    = float(drop_p[0])
+        lat    = float(drop_p[1])
+        excess = fwd - APPROACH_TARGET_X
+
+        # World-frame bearing from pelvis to drop point.
+        drop_xy   = self._target_drop_pt[:2]
+        pelvis_xy = self._data.qpos[:2]
+        delta     = drop_xy - pelvis_xy
+        world_bearing = float(np.arctan2(delta[1], delta[0]))
+        yaw = self._pelvis_yaw()
+        # Shortest-path bearing error in [-π, π].
+        bearing_err = float(np.arctan2(
+            np.sin(world_bearing - yaw), np.cos(world_bearing - yaw)
         ))
-        return (vx, vy, wz)
+
+        if abs(bearing_err) > 0.25:
+            # Phase 1: turn to face the drop.  Minimum forward speed to keep
+            # the walker gait alive; full angular rate to turn efficiently.
+            wz = float(np.sign(bearing_err)) * WZ_P1
+            vx = VX_P1
+        else:
+            # Phase 2: walk straight forward — no angular correction.
+            wz = 0.0
+            vx = VX_FAST if excess > 0.0 else VX_P1
+
+        return (vx, 0.0, wz)
 
     def _near_target_waypoint(self) -> bool:
-        """True when robot is close to the standing waypoint AND facing roughly −y.
+        """True when the robot is close enough to the drop point to start placing.
 
-        The pelvis-frame reach-window check (`_in_reach_window`) is NOT used for
-        the target approach because the drop point can satisfy the window even when
-        the robot is mid-turn and far from the table.  This world-frame check
-        requires both conditions simultaneously.
+        Fires when 0.05 m < drop_fwd < APPROACH_TARGET_X+0.18 m and
+        lateral offset < 0.30 m.  The generous lateral tolerance works because
+        Phase 2 (pure vx walk) keeps the robot pointed at the drop.
         """
-        yaw = self._pelvis_yaw()
-        if abs(yaw + np.pi / 2) > 0.10:
-            return False
-        pelvis = self._data.qpos[:3]
-        drop_w = self._target_drop_pt
-        stand_x = float(drop_w[0]) + 0.15
-        stand_y = float(drop_w[1]) + APPROACH_TARGET_X
-        ex = stand_x - float(pelvis[0])
-        ey = stand_y - float(pelvis[1])
-        return float(np.sqrt(ex * ex + ey * ey)) < 0.06
+        drop_p = self._target_drop_in_pelvis()
+        fwd = float(drop_p[0])
+        lat = abs(float(drop_p[1]))
+        return fwd > 0.05 and fwd < 0.30 and lat < 0.35
 
     def _in_reach_window(self, cyl: np.ndarray) -> bool:
         return (REACH_X_MIN < cyl[0] < REACH_X_MAX and
