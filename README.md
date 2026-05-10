@@ -21,7 +21,7 @@ The latest working result uses a hybrid contact-guided grasp. The robot first pe
 | Work 3 — Physical grasp experiment | Contact/caging physical-grasp branch; near pickup but slipping remained | https://youtu.be/tIisPTbTaQo?si=AseZ2_7o_rqtnKLQ |
 | Work 4 — Hybrid contact-guided grasp | Latest working hybrid result | https://www.youtube.com/watch?v=rhKuY6O_H5o |
 
-> GitHub does not render embedded YouTube players in Markdown, so videos are linked through thumbnails/URLs. Local GIFs can be added later under `assets/readme/`.
+
 
 ## Current Status
 
@@ -400,22 +400,3 @@ If some policy names differ, adjust based on the actual `run.py` parser. Do not 
 5. Replace ground-truth object pose with a Visual Oracle using RGB-D segmentation/back-projection.
 6. Test OpenVLA-style shadow inference or fine-tuning once the teacher dataset is cleaner and more diverse.
 
-## Adding GIFs or Images
-
-GitHub README files support images and GIFs:
-
-```md
-![Hybrid contact-guided grasp](assets/readme/hybrid_contact_guided_grasp.gif)
-<img src="assets/readme/hybrid_contact_guided_grasp.gif" alt="Hybrid contact-guided grasp" width="720" />
-```
-
-These paths are examples; add the actual files under `assets/readme/` before referencing them.
-
-Recommended layout:
-
-```text
-assets/readme/
-└── hybrid_contact_guided_grasp.gif
-```
-
-Large videos should stay on YouTube; short compressed GIFs are best for README previews.
