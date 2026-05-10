@@ -14,7 +14,7 @@ The latest working result uses a hybrid contact-guided grasp. The robot first pe
 
 ## Video Evidence
 
-| Work | What it shows | Link |
+| Milestone | What it shows | Link |
 |---|---|---|
 | Work 1 — FSM baseline | Original autonomous FSM/kinematic pick-and-place baseline | https://youtu.be/4FKgn35iU-Y?si=TiO-xRAxPQBCLsaj |
 | Work 2 — Scripted keyboard teacher | Automated keyboard-style teacher experiment | https://youtu.be/Lw88uj7FiFo?si=Bw5gZGO6kQ3KBkY4 |
@@ -408,6 +408,8 @@ GitHub README files support images and GIFs:
 ![Hybrid contact-guided grasp](assets/readme/hybrid_contact_guided_grasp.gif)
 <img src="assets/readme/hybrid_contact_guided_grasp.gif" alt="Hybrid contact-guided grasp" width="720" />
 ```
+
+These paths are examples; add the actual files under `assets/readme/` before referencing them.
 
 Recommended layout:
 
