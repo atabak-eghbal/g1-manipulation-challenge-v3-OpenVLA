@@ -1,3 +1,8 @@
+"""Tests for scripted keyboard plan parsing/expansion.
+
+These tests keep scripted-teacher command semantics stable without depending on
+MuJoCo runtime execution.
+"""
 from __future__ import annotations
 
 import json

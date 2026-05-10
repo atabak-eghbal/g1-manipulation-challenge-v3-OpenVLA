@@ -1,3 +1,8 @@
+"""Tests for deterministic scenario configuration parsing and selection.
+
+These checks protect perturbation schema validation and modulo-based scenario
+selection used by batch data collection.
+"""
 from __future__ import annotations
 
 import json

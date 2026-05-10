@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Inspect a G1-native VLA dataset export."""
+"""Inspect a G1-native VLA dataset export.
+
+Reads dataset.jsonl and prints quick schema/phase/action summaries.
+Role: diagnostic inspector for exported data artifacts.
+"""
 
 from __future__ import annotations
 

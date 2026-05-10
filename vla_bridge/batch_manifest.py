@@ -22,7 +22,11 @@ STATUS_FAILED = "failed"
 
 @dataclass(frozen=True)
 class DemoRunRecord:
-    """Detailed record of a single demonstration rollout in a batch."""
+    """Detailed record of a single demonstration rollout in a batch.
+
+    Includes scenario provenance (scenario_id/seed/scenario metadata) so
+    downstream export/audit tools can track which perturbation produced each run.
+    """
     demo_id: str
     output_dir: str
     metadata_path: str

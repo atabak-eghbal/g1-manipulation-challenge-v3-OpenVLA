@@ -187,7 +187,11 @@ def build_audit_report(
     source_dataset: str = "",
     idle_min_run_length: int = 25,
 ) -> dict[str, Any]:
-    """Construct a comprehensive audit report."""
+    """Construct a comprehensive audit report.
+
+    The report explicitly includes single-trajectory caveats so downstream
+    train/val consumers do not over-interpret these debugging splits.
+    """
     arr = action_array(records)
     phases = phase_counts(records)
     balance = boolean_balance(records)

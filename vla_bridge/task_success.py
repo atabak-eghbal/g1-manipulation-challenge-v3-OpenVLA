@@ -13,7 +13,11 @@ from typing import Any
 
 @dataclass
 class TaskSuccessTracker:
-    """Tracks grasp and placement outcome for one rollout."""
+    """Tracks grasp evidence vs final task outcome for one rollout.
+
+    This separates "script finished" from "task succeeded":
+    attachment/lift/placement are evaluated explicitly at finalize().
+    """
 
     source_table_z: float | None = None
     target_table_z: float | None = None

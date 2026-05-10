@@ -1,3 +1,8 @@
+"""Tests for VLA batch manifest read/write and accounting.
+
+These tests protect batch bookkeeping contracts used by multi-demo recording
+and combined dataset export.
+"""
 from __future__ import annotations
 
 import tempfile

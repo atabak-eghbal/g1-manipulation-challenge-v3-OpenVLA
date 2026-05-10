@@ -11,6 +11,9 @@ Usage (with replay trace):
     python scripts/plot_vla_demo.py data/vla_demos/demo_000/demo.jsonl \\
         --replay-trace data/vla_replays/replay_000/replay_trace.npz \\
         --output-dir data/vla_replays/replay_000/plots
+
+Reads demo JSONL (and optionally replay trace NPZ) and writes PNG diagnostics.
+Role: offline plotting utility for debugging replay fidelity and phase/action trends.
 """
 from __future__ import annotations
 

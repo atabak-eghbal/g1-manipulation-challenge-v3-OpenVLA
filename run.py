@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-"""G1 Table Red Block — standalone MuJoCo scene with walker + reacher policies.
+"""Runtime entry point for the G1 manipulation stack.
+
+This file wires together the system layers used in live MuJoCo execution:
+policy selection, high-level command generation, controller target synthesis,
+PD actuator writes, physics stepping, and grasp-backend updates.
+
+The runtime and research/tooling split is intentional:
+- runtime control logic lives here and in common/policies modules;
+- data-pipeline tooling lives under vla_bridge/ and scripts/.
+
+This module supports both baseline and research branches:
+- keyboard and FSM baselines;
+- scripted keyboard teacher playback;
+- contact-guided/hybrid grasp experiments.
+
+G1 Table Red Block — standalone MuJoCo scene with walker + reacher policies.
 
 Converted from the LuckyEngine G1-Table-Red-Block.hscene. Runs the G1 robot
 with trained Walker/Croucher/Rotator/Reacher ONNX policies in a scene with
@@ -449,6 +464,9 @@ def main():
   parser = argparse.ArgumentParser(description="G1 Table Red Block — MuJoCo standalone")
   parser.add_argument("--no-cameras", action="store_true", help="Disable camera windows")
   parser.add_argument("--cam-fps", type=int, default=10, help="Camera render FPS (default: 10)")
+  # Policy chooses high-level command source; grasp backend remains a separate
+  # runtime concern so the same policy can be evaluated with different grasp
+  # assumptions (kinematic shortcut vs contact-aware/hybrid evidence paths).
   parser.add_argument(
     "--policy",
     choices=["keyboard", "fsm", "scripted_keyboard", "contact-guided-grasp"],
@@ -504,6 +522,8 @@ def main():
                                  right_reacher=right_reacher)
 
   grasp_backend = None
+  # Policy selection is the high-level behavior layer.  Grasp backend selection
+  # is orthogonal so grasp assumptions can be swapped without rewriting policy code.
   if args.policy == "fsm":
     rb_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "red_block")
     grasp_backend = make_grasp_backend(args.grasp_backend, model, data, ctrl.right_palm_site_id, rb_body_id)
@@ -631,6 +651,9 @@ def main():
       if wall - sim_time > max_catchup:
         sim_time = wall - max_catchup
       while sim_time < wall:
+        # Layered runtime flow:
+        # policy.step() -> controller command fields -> ctrl.step() joint targets
+        # -> ctrl.apply_pd_control() actuator writes -> mj_step() physics.
         if control_step % decimation == 0:
           if args.policy in ("scripted_keyboard", "contact-guided-grasp") and policy.done:
             pass  # hold final pose when script finishes
@@ -639,6 +662,9 @@ def main():
           target_pos = ctrl.step()
         ctrl.apply_pd_control(target_pos)
         mujoco.mj_step(model, data)
+        # Grasp backend must tick every physics step (not just control steps) so
+        # contact/attachment state and collision restoration stay synchronized
+        # with MuJoCo integration at 200 Hz.
         if grasp_backend is not None:
           attached = grasp_backend.tick(ctrl.grip_closed)
           if attached and args.policy == "scripted_keyboard":

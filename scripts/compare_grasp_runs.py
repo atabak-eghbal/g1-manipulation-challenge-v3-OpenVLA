@@ -6,6 +6,9 @@ Usage:
         data/vla_demos/run_a/summary.json \\
         data/vla_demos/run_b/summary.json \\
         [--output-json path/to/comparison.json]
+
+Reads per-run summary JSON files and prints a table focused on grasp outcomes;
+optionally writes a comparison JSON artifact for reporting.
 """
 from __future__ import annotations
 

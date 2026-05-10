@@ -1,3 +1,8 @@
+"""Diversity summary helpers for scenario-perturbed batch manifests.
+
+This module is a lightweight analytics layer over manifest metadata; it does
+not inspect MuJoCo trajectories directly.
+"""
 from __future__ import annotations
 
 from typing import Any
@@ -6,6 +11,7 @@ from vla_bridge.batch_manifest import BatchManifest
 
 
 def summarize_manifest_diversity(manifest: BatchManifest) -> dict[str, Any]:
+    """Summarize scenario and perturbation spread for one batch manifest."""
     successful = [d for d in manifest.demos if d.status == "success"]
     scenario_ids: list[str] = []
     offsets: list[tuple[float, float]] = []

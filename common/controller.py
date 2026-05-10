@@ -9,7 +9,13 @@ import numpy as np
 
 
 class WalkerReacherController:
-  """Full G1 controller with locomotion mode switching and arm reaching."""
+  """Translate high-level walk/reach/grip commands into actuator-space targets.
+
+  Ownership/invariants:
+  - Owns mutable runtime command state (walk cmd, reach target, grip intent).
+  - Composes walker + right-reacher ONNX outputs into one full-body target.
+  - Does not step physics; caller must apply targets then call mj_step().
+  """
 
   # GLFW key codes
   KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT = 265, 264, 263, 262
@@ -66,6 +72,8 @@ class WalkerReacherController:
     self.grip_close_speed = 1.0    # fraction per physics tick; lower = slower
     # Optional continuous override: when not None, the target fraction is this
     # value rather than the binary 0/1 derived from grip_closed.
+    # This was added after binary closure proved too aggressive for
+    # contact-aware/physical grasp experiments.
     self.grip_target_fraction: float | None = None
 
     self._build_joint_mappings()
@@ -315,7 +323,8 @@ class WalkerReacherController:
 
   # --- Step ---
   def step(self) -> np.ndarray:
-    # Build walker observation (always runs — keeps legs stable)
+    # Build walker observation (always runs — keeps legs stable).
+    # The walker ONNX expects raw observations; do not externally normalise here.
     lin_vel, ang_vel = self._get_base_velocities()
     proj_gravity = self._get_projected_gravity()
     joint_pos = self._get_joint_positions()
@@ -422,6 +431,8 @@ class WalkerReacherController:
   # ------------------------------------------------------------------ #
 
   def apply_pd_control(self, target_pos):
+    # Apply body joint targets first, then hand/finger actuator targets so
+    # both locomotion and grasp channels are written every physics tick.
     for i, act_id in enumerate(self.actuator_ids):
       if act_id >= 0:
         self.data.ctrl[act_id] = target_pos[i]

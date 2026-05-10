@@ -1,3 +1,8 @@
+"""Tests for the G1-native dataset exporter.
+
+These tests protect the 8D action-vector schema and filtering behavior used by
+dataset audit and training-view utilities.
+"""
 from __future__ import annotations
 
 import tempfile

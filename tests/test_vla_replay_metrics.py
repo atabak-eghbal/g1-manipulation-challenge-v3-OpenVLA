@@ -1,3 +1,8 @@
+"""Tests for teacher-vs-replay metric computation.
+
+These checks keep replay diagnostics stable so adapter/teacher replay fidelity
+can be compared consistently across experiments.
+"""
 from __future__ import annotations
 
 import unittest

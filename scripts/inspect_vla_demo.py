@@ -3,6 +3,9 @@
 
 Usage:
     python scripts/inspect_vla_demo.py data/vla_demos/demo_000/demo.jsonl
+
+Reads demo JSONL and optional sibling summary.json; writes no files.
+Role: fast diagnostic inspector for rollout artifacts.
 """
 from __future__ import annotations
 
