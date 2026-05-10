@@ -39,15 +39,10 @@ pip install mujoco onnxruntime numpy opencv-python
 ### Running the Autonomous Demo
 To run the full autonomous pick-and-place sequence:
 ```bash
-python run.py --policy fsm
+mjpython run.py --policy contact-guided-grasp --no-cameras
 ```
 
-### Running Integration Tests
-To verify the task completion headlessly:
-```bash
-export PYTHONPATH=$PYTHONPATH:.
-python3 scripts/test_fsm_approach.py
-```
+
 
 ## Controls (Keyboard Mode)
 To run the original manual mode for comparison:
