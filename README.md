@@ -109,11 +109,13 @@ VLA Bridge
 │   ├── smoke_env.py
 │   ├── record_vla_demo.py
 │   ├── replay_vla_demo.py
+│   ├── plot_vla_demo.py
 │   ├── export_g1_native_vla_dataset.py
 │   ├── audit_g1_native_vla_dataset.py
 │   ├── build_g1_native_training_views.py
 │   ├── record_vla_demo_batch.py
 │   ├── export_g1_native_vla_batch_dataset.py
+│   ├── inspect_scripted_keyboard_plan.py
 │   ├── record_scripted_keyboard_demo.py
 │   ├── compare_grasp_runs.py
 │   └── test_contact_guided_grasp.py
