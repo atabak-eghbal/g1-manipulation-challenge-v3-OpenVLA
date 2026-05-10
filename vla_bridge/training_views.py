@@ -225,7 +225,13 @@ def build_training_views(
     max_weight: float = 20.0,
     rare_phase_boost: float = 5.0,
 ) -> dict[str, Any]:
-    """Build full, filtered, and weighted views of the dataset."""
+    """Build full, filtered, and weighted views of the dataset.
+
+    Outputs:
+    - full.jsonl (unaltered records),
+    - filtered_no_idle.jsonl (idle-pruned view),
+    - sample_weights.jsonl (phase-balancing weights).
+    """
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 

@@ -25,6 +25,8 @@ class FSMPolicy(BasePolicy):
         self._fsm   = FSMCore(controller.model, controller.data)
 
     def step(self) -> PolicyOutput:
+        # Forward backend attachment state into FSMCore so transition logic stays
+        # backend-agnostic and testable.
         attached = self._grasp.attached if self._grasp is not None else False
         out = self._fsm.tick(attached=attached)
         out = self._close_grip_command(out)

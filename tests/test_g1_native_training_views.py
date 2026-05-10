@@ -1,3 +1,8 @@
+"""Tests for G1-native training-view construction.
+
+These tests protect idle filtering and phase-weight calculations used to build
+filtered_no_idle and sample_weights training artifacts.
+"""
 from __future__ import annotations
 
 import tempfile

@@ -1,3 +1,8 @@
+"""Tests for scripted-rollout task success evaluation.
+
+These checks protect attachment/lift/placement outcome classification so
+summary.json success reporting remains consistent.
+"""
 from __future__ import annotations
 
 import json

@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""Inspect scenario diversity statistics from a batch manifest.
+
+Reads:
+- batch_manifest.json produced by batch recording.
+
+Writes:
+- optional summary JSON when --output-json is provided.
+
+Role: diagnostic/reporting helper (no simulation or training changes).
+"""
 from __future__ import annotations
 
 import argparse

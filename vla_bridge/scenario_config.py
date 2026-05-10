@@ -1,3 +1,8 @@
+"""Deterministic scenario-perturbation schema for batch recording.
+
+This module is intentionally pure JSON/dataclass parsing so perturbation
+selection can be tested without MuJoCo/OpenVLA dependencies.
+"""
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
@@ -8,6 +13,7 @@ import json
 
 @dataclass(frozen=True)
 class ScenarioSpec:
+    """One deterministic perturbation setup used for a single rollout."""
     scenario_id: str
     seed: int
     red_block_xy_offset_m: tuple[float, float] = (0.0, 0.0)
@@ -17,6 +23,7 @@ class ScenarioSpec:
 
 @dataclass(frozen=True)
 class ScenarioConfig:
+    """Named collection of deterministic scenario specifications."""
     name: str
     description: str
     scenarios: list[ScenarioSpec]
@@ -32,6 +39,7 @@ def _as_xy(value: Any, *, field_name: str) -> tuple[float, float]:
 
 
 def load_scenario_config(path: str | Path) -> ScenarioConfig:
+    """Load and validate a scenario configuration JSON file."""
     src = Path(path)
     data = json.loads(src.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -101,14 +109,17 @@ def load_scenario_config(path: str | Path) -> ScenarioConfig:
 
 
 def select_scenario(config: ScenarioConfig, index: int) -> ScenarioSpec:
+    """Select a scenario deterministically by index modulo scenario count."""
     if not config.scenarios:
         raise ValueError("config.scenarios must not be empty")
     return config.scenarios[int(index) % len(config.scenarios)]
 
 
 def scenario_to_metadata(spec: ScenarioSpec) -> dict[str, Any]:
+    """Convert ScenarioSpec to JSON-serializable metadata for manifests/demos."""
     return asdict(spec)
 
 
 def load_and_select_scenario(path: str | Path, index: int) -> ScenarioSpec:
+    """Convenience wrapper for load + deterministic selection."""
     return select_scenario(load_scenario_config(path), index)

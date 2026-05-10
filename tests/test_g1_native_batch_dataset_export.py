@@ -1,3 +1,8 @@
+"""Tests for combined G1-native batch dataset export.
+
+These tests protect demo-selection, provenance fields, and merged dataset
+schema contracts consumed by downstream audit/training-view tools.
+"""
 from __future__ import annotations
 
 import json

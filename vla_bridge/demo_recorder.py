@@ -47,6 +47,9 @@ class VLADemoRecorder:
     until the next observation arrives to supply the second palm position.
     The last observation in a rollout is finalized with a zero-displacement
     action when :meth:`finalize` is called.
+
+    This pending-step pattern keeps the recorder passive: runtime control
+    remains owned by policy/controller code, while this class only serializes.
     """
 
     def __init__(

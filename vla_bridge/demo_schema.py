@@ -24,7 +24,12 @@ import numpy as np
 
 @dataclass(frozen=True)
 class VLADemoStep:
-    """One synchronized image/action record from an FSM teacher rollout."""
+    """One synchronized JSONL row from an FSM teacher rollout.
+
+    Schema intent:
+    - keep enough state to replay/debug teacher behavior offline;
+    - store both legacy 7D action_7d and explicit walk/reach/grip commands.
+    """
 
     step_index: int
     sim_time: float

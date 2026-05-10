@@ -70,6 +70,7 @@ class KinematicAttachment(GraspBackend):
 
     ATTACH_DIST:   float = 0.13  # m: auto-attach when palm is within this distance
     SNAP_DIST:     float = 0.03  # m: clamp palm-local offset so object sits in hand
+    # Short release delay avoids immediate re-collision impulses at detach time.
     RELEASE_TICKS: int   = 15    # physics ticks (~0.075s) to wait before restoring geoms
 
     def __init__(
@@ -458,6 +459,9 @@ def make_grasp_backend(
     backend: "kinematic"              → KinematicAttachment
              "contact-aware-physical" → ContactAwarePhysicalGrasp
              "hybrid"                 → HybridGraspBackend
+
+    This keeps runtime policy selection independent from grasp mechanics so
+    the same high-level controller can be evaluated under different assumptions.
     """
     if backend == "kinematic":
         return KinematicAttachment(model, data, palm_site_id, obj_body_id)

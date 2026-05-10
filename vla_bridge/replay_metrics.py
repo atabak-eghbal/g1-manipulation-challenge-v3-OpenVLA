@@ -105,6 +105,9 @@ def compute_replay_metrics(
 
     *replay_palm_world* must have shape (len(steps), 3).
     *replay_grip* length must match len(steps).
+
+    This function is the main teacher-vs-replay diagnostic entry point used to
+    quantify action-interface fidelity before model training.
     """
     teacher_palm = np.asarray([s.palm_world for s in steps], dtype=np.float64)
     teacher_grip = [bool(s.grip_closed) for s in steps]

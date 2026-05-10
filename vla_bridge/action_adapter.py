@@ -11,6 +11,11 @@ The adapter treats a VLA action as a small end-effector delta in world frame:
 
 Only dx/dy/dz and gripper are used in this first milestone.
 Rotation is intentionally ignored until we prove the action representation is executable.
+
+Review note:
+Raw 7D replay alone was not sufficient for the full humanoid task, so this
+adapter is now mainly a research baseline/reference path beside teacher-command
+replay and G1-native command export.
 """
 
 from __future__ import annotations
@@ -72,7 +77,11 @@ def world_to_pelvis(
 
 
 def clip_reach_target(reach_target: np.ndarray) -> np.ndarray:
-    """Clip *reach_target* to the reacher workspace bounds."""
+    """Clip *reach_target* to the reacher workspace bounds.
+
+    Hard clipping is intentional so adapter outputs stay executable even when
+    world-frame deltas drift outside the arm's trained workspace.
+    """
     target = validate_vector("reach_target", reach_target, (3,))
     return np.clip(target, _REACH_LOW, _REACH_HIGH)
 

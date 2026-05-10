@@ -128,6 +128,16 @@ class FSMCore:
     """Tick-driven state machine that emits a high-level PolicyOutput each step.
 
     Holds references to MuJoCo model/data for GT geometry; never modifies them.
+
+    Architecture role:
+    - owns autonomous high-level transitions;
+    - does not write actuators or step physics (runtime/controller does that).
+
+    Phase order is intentional:
+    source-side (SETTLE→...→LIFT_SOURCE), then target-side
+    (APPROACH_TARGET→...→DONE).  Timeouts are deliberate safeguards because
+    the reacher has an empirical accuracy floor and may not always meet strict
+    geometric thresholds in finite time.
     """
 
     def __init__(self, model, data) -> None:

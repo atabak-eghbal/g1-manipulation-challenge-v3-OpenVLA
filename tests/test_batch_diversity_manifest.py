@@ -1,3 +1,8 @@
+"""Tests for batch manifest diversity summaries.
+
+These checks protect scenario-provenance reporting so batch perturbation
+coverage can be audited without loading MuJoCo trajectories.
+"""
 from __future__ import annotations
 
 import json

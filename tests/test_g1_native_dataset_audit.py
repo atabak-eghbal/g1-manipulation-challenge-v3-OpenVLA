@@ -1,3 +1,8 @@
+"""Tests for G1-native dataset audit/split helpers.
+
+These checks guard phase statistics, idle-run detection, and split summaries so
+offline data-quality reports remain stable.
+"""
 from __future__ import annotations
 
 import tempfile

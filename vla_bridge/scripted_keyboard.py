@@ -44,6 +44,9 @@ class ScriptedKeyboardPlan:
                  "world" — reach_target values are world-frame coordinates;
                  the recording/viewer code must convert to pelvis frame each tick
                  using the robot's current pose.
+
+    This plan acts as an automated keyboard-style teacher macro, not as runtime
+    autonomy; it reproduces staged human-like command sequences deterministically.
     """
 
     name: str

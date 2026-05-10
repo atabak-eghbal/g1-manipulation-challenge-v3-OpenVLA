@@ -117,7 +117,11 @@ def export_combined_batch_dataset(
     drop_done: bool = True,
     drop_inactive_reach: bool = False,
 ) -> dict[str, Any]:
-    """Combine successful demos from a manifest into one G1-native dataset."""
+    """Combine successful demos from a manifest into one G1-native dataset.
+
+    Preserves per-sample provenance (batch/demo/sample/scenario identifiers) so
+    later audits can trace each record back to its original rollout.
+    """
     manifest_path = Path(manifest_path)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)

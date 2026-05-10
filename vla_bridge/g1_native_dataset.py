@@ -10,6 +10,9 @@ The exported target is the G1-native command interface proven executable in
 Step 16:
 
 [walk_x, walk_y, walk_yaw, reach_x, reach_y, reach_z, reach_active, grip_closed]
+
+This target was chosen because replaying teacher commands remained faithful,
+while pure hybrid-7D replay showed drift on full task rollouts.
 """
 
 from __future__ import annotations
